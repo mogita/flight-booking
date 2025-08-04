@@ -1,0 +1,5 @@
+- TypeScript
+- Vite
+- React router v7 (server-side rendering)
+- Shadcn UI (TailwindCSS)
+- Light and dark support, by default use system preference

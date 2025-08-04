@@ -1,0 +1,13 @@
+- Use `pnpm` for package and workspace management
+- Use `prettier` for unified code format
+- Use `git` for version control
+- Use `docker compose` for containerization and deployment
+    - `web`: frontend container
+    - `server`: backend container
+    - `db`: database container
+- Use workspaces to manage frontend and backend code
+    - `packages/web`: frontend code
+    - `packages/server`: backend code
+    - `packages/shared`: shared code (types, constants, etc.)
+    - Should be able to run frontend and backend individually, or together using `pnpm` scripts
+- Use local installed PostgreSQL for development

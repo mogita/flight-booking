@@ -1,0 +1,36 @@
+export interface Flight {
+  id: string
+  airline: string
+  flight_number: string
+  departure_time: string
+  arrival_time: string
+  price: number
+  source: string
+  destination: string
+  departure_date: string
+  arrival_date: string
+  is_round_trip: boolean
+  created_at: string
+  updated_at: string
+  deleted_at?: string
+}
+
+export interface FlightSearchParams {
+  source?: string
+  destination?: string
+  departure_date?: string
+  return_date?: string
+  is_round_trip?: boolean
+  sort_by?: 'price' | 'departure_time' | 'arrival_time'
+  sort_order?: 'asc' | 'desc'
+  page?: number
+  limit?: number
+}
+
+export interface FlightSearchResponse {
+  flights: Flight[]
+  total: number
+  page: number
+  limit: number
+  total_pages: number
+}
