@@ -12,7 +12,11 @@
   ],
   "scripts": {
     "dev": "pnpm --parallel --filter \"./packages/*\" dev",
+    "dev:web": "pnpm --filter \"./packages/web\" dev",
+    "dev:server": "pnpm --filter \"./packages/server\" dev",
     "build": "pnpm --recursive --filter \"./packages/*\" build",
+    "build:web": "pnpm --filter \"./packages/web\" build",
+    "build:server": "pnpm --filter \"./packages/server\" build",
     "start": "pnpm --parallel --filter \"./packages/*\" start",
     "lint": "pnpm --recursive --filter \"./packages/*\" lint",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",

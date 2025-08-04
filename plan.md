@@ -4,6 +4,8 @@
 
 This document outlines the implementation plan for a simplified flight booking application using React.js for the frontend and Node.js with Express for the backend. The application will allow users to search for flights, view results in a sortable manner, and book flights with passenger details.
 
+Word for Augment Code: the playwright MCP is enabled, use it to test any UI related changes when needed, don't simply open a link in the user's default browser where you have no way to inspect.
+
 ## Architecture Overview
 
 ### Monorepo Structure
@@ -105,12 +107,12 @@ This document outlines the implementation plan for a simplified flight booking a
 ### 3. Frontend Development
 
 #### 3.1 Frontend Infrastructure Setup
-- [ ] Initialize Vite project with React and TypeScript
-- [ ] Configure React Router v7 with SSR
-- [ ] Set up Shadcn UI and TailwindCSS
-- [ ] Configure light and dark theme support with system preference detection
-- [ ] Configure build and development scripts
-- [ ] Set up environment variables for API endpoints
+- [x] Initialize Vite project with React and TypeScript
+- [x] Configure React Router v7 with SSR
+- [x] Set up Shadcn UI and TailwindCSS
+- [x] Configure light and dark theme support with system preference detection
+- [x] Configure build and development scripts
+- [x] Set up environment variables for API endpoints
 
 #### 3.2 Theme System Implementation
 - [ ] Set up theme provider with light/dark mode support
