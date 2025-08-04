@@ -1,0 +1,86 @@
+import * as React from 'react'
+import { format } from 'date-fns'
+import { Calendar as CalendarIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+
+export interface DatePickerProps {
+  value?: Date
+  onChange?: (date: Date | undefined) => void
+  placeholder?: string
+  disabled?: boolean
+  className?: string
+  minDate?: Date
+  maxDate?: Date
+}
+
+const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
+  ({ 
+    value, 
+    onChange, 
+    placeholder = 'Pick a date', 
+    disabled = false, 
+    className,
+    minDate,
+    maxDate,
+    ...props 
+  }, ref) => {
+    const [isOpen, setIsOpen] = React.useState(false)
+    const [inputValue, setInputValue] = React.useState(
+      value ? format(value, 'yyyy-MM-dd') : ''
+    )
+
+    React.useEffect(() => {
+      if (value) {
+        setInputValue(format(value, 'yyyy-MM-dd'))
+      } else {
+        setInputValue('')
+      }
+    }, [value])
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const dateValue = e.target.value
+      setInputValue(dateValue)
+      
+      if (dateValue) {
+        const date = new Date(dateValue)
+        if (!isNaN(date.getTime())) {
+          // Check date constraints
+          if (minDate && date < minDate) return
+          if (maxDate && date > maxDate) return
+          
+          onChange?.(date)
+        }
+      } else {
+        onChange?.(undefined)
+      }
+    }
+
+    const formatMinDate = minDate ? format(minDate, 'yyyy-MM-dd') : undefined
+    const formatMaxDate = maxDate ? format(maxDate, 'yyyy-MM-dd') : undefined
+
+    return (
+      <div className={cn('relative', className)}>
+        <Input
+          ref={ref}
+          type="date"
+          value={inputValue}
+          onChange={handleInputChange}
+          disabled={disabled}
+          min={formatMinDate}
+          max={formatMaxDate}
+          className={cn(
+            'pl-10',
+            !inputValue && 'text-muted-foreground'
+          )}
+          {...props}
+        />
+        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+      </div>
+    )
+  }
+)
+DatePicker.displayName = 'DatePicker'
+
+export { DatePicker }
