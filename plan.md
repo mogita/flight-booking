@@ -72,12 +72,12 @@ This document outlines the implementation plan for a simplified flight booking a
 - [x] Set up database connection and pooling
 
 #### 2.2 Core Backend Infrastructure
-- [ ] Initialize Express application with TypeScript
-- [ ] Configure middleware (helmet, cors, morgan, compression, rate-limiter)
-- [ ] Set up error handling middleware
-- [ ] Implement request validation using Zod
-- [ ] Configure environment variables management
-- [ ] Set up logging system
+- [x] Initialize Express application with TypeScript
+- [x] Configure middleware (helmet, cors, morgan, compression, rate-limiter)
+- [x] Set up error handling middleware
+- [x] Implement request validation using Zod
+- [x] Configure environment variables management
+- [x] Set up logging system
 
 #### 2.3 Authentication System
 - [ ] Implement simple JWT token generation and validation
