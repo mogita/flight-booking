@@ -80,27 +80,27 @@ This document outlines the implementation plan for a simplified flight booking a
 - [x] Set up logging system
 
 #### 2.3 Authentication System
-- [ ] Implement simple JWT token generation and validation
-- [ ] Create authentication middleware
-- [ ] Implement POST /login endpoint (hardcoded credentials)
-- [ ] Add protected route middleware
+- [x] Implement simple JWT token generation and validation
+- [x] Create authentication middleware
+- [x] Implement POST /login endpoint (hardcoded credentials)
+- [x] Add protected route middleware
 
 #### 2.4 Flight API Endpoints
-- [ ] Implement GET /flights endpoint with search functionality
-  - [ ] Query parameters: source, destination, departure_date, is_round_trip
-  - [ ] Server-side pagination support
-  - [ ] Server-side sorting (price, departure_time, arrival_time)
-  - [ ] Input validation and sanitization
-- [ ] Implement GET /flights/:id endpoint
-- [ ] Add comprehensive error handling and logging
+- [x] Implement GET /flights endpoint with search functionality
+  - [x] Query parameters: source, destination, departure_date, is_round_trip
+  - [x] Server-side pagination support
+  - [x] Server-side sorting (price, departure_time, arrival_time)
+  - [x] Input validation and sanitization
+- [x] Implement GET /flights/:id endpoint
+- [x] Add comprehensive error handling and logging
 
 #### 2.5 Booking API Endpoints
-- [ ] Implement POST /bookings endpoint (protected)
-- [ ] Implement GET /bookings endpoint (protected)
-- [ ] Implement GET /bookings/:id endpoint (protected)
-- [ ] Implement PUT /bookings/:id endpoint (protected)
-- [ ] Implement DELETE /bookings/:id endpoint (soft delete, protected)
-- [ ] Add booking validation and business logic
+- [x] Implement POST /bookings endpoint (protected)
+- [x] Implement GET /bookings endpoint (protected)
+- [x] Implement GET /bookings/:id endpoint (protected)
+- [x] Implement PUT /bookings/:id endpoint (protected)
+- [x] Implement DELETE /bookings/:id endpoint (soft delete, protected)
+- [x] Add booking validation and business logic
 
 ### 3. Frontend Development
 

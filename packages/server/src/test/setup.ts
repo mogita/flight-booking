@@ -2,7 +2,7 @@ import { beforeAll, afterAll } from 'vitest'
 
 // Set test environment
 process.env.NODE_ENV = 'test'
-process.env.DATABASE_URL = 'postgresql://mogita:mogita@localhost:5432/flight_booking_test'
+process.env.DATABASE_URL = 'postgresql://mogita:mogita@localhost:5432/flight_booking'
 process.env.JWT_SECRET = 'test-jwt-secret'
 process.env.PORT = '3001'
 

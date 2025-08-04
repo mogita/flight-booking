@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
 import { logger } from './utils/logger'
 import { isDevelopment } from './config/env'
+import apiRoutes from './routes'
 
 export function createApp() {
   const app = express()
@@ -61,8 +62,8 @@ export function createApp() {
     })
   })
 
-  // API routes will be added here
-  // app.use('/api', apiRoutes)
+  // API routes
+  app.use('/api', apiRoutes)
 
   // 404 handler
   app.use(notFoundHandler)
