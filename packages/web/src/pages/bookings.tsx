@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Plane, User } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plane, User, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading'
@@ -8,12 +8,22 @@ import { ErrorState } from '@/components/ui/error'
 import { ProtectedRoute, useAuth } from '@/hooks/use-auth'
 import { useApi } from '@/hooks/use-api'
 import { api } from '@/lib/api'
-import type { Booking } from '@flight-booking/shared'
+import type { BookingWithFlight } from '@flight-booking/shared'
+
+// Group bookings by round trip
+interface GroupedBooking {
+  id: string
+  type: 'one_way' | 'round_trip'
+  bookings: BookingWithFlight[]
+  round_trip_booking_id?: string
+  created_at: string
+}
 
 export function BookingsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const [bookings, setBookings] = useState<BookingWithFlight[]>([])
+  const [groupedBookings, setGroupedBookings] = useState<GroupedBooking[]>([])
 
   // Fetch user's bookings
   const { 
@@ -29,6 +39,52 @@ export function BookingsPage() {
   useEffect(() => {
     if (fetchedBookings) {
       setBookings(fetchedBookings)
+
+      // Group bookings by round trip
+      const grouped: GroupedBooking[] = []
+      const processedRoundTripIds = new Set<string>()
+
+      fetchedBookings.forEach((booking) => {
+        if (booking.booking_type === 'round_trip' && booking.round_trip_booking_id) {
+          // Skip if we've already processed this round trip
+          if (processedRoundTripIds.has(booking.round_trip_booking_id)) {
+            return
+          }
+
+          // Find all bookings with the same round trip ID
+          const roundTripBookings = fetchedBookings.filter(
+            (b) => b.round_trip_booking_id === booking.round_trip_booking_id
+          )
+
+          // Sort by departure time to ensure outbound comes first
+          roundTripBookings.sort((a, b) =>
+            new Date(a.flight.departure_time).getTime() - new Date(b.flight.departure_time).getTime()
+          )
+
+          grouped.push({
+            id: booking.round_trip_booking_id,
+            type: 'round_trip',
+            bookings: roundTripBookings,
+            round_trip_booking_id: booking.round_trip_booking_id,
+            created_at: booking.created_at,
+          })
+
+          processedRoundTripIds.add(booking.round_trip_booking_id)
+        } else if (booking.booking_type === 'one_way' || !booking.round_trip_booking_id) {
+          // Single booking
+          grouped.push({
+            id: booking.id,
+            type: 'one_way',
+            bookings: [booking],
+            created_at: booking.created_at,
+          })
+        }
+      })
+
+      // Sort grouped bookings by creation date (newest first)
+      grouped.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setGroupedBookings(grouped)
     }
   }, [fetchedBookings])
 
@@ -115,7 +171,7 @@ export function BookingsPage() {
         </div>
 
         {/* Bookings List */}
-        {bookings.length === 0 ? (
+        {groupedBookings.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
             <CardContent className="text-center py-12">
               <Plane className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -130,84 +186,142 @@ export function BookingsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {bookings.map((booking) => (
-              <Card key={booking.id} className="overflow-hidden">
+            {groupedBookings.map((group) => (
+              <Card key={group.id} className="overflow-hidden">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">
-                        Booking #{booking.id.slice(-8).toUpperCase()}
+                        Booking #{group.type === 'round_trip' ? group.id.slice(-8).toUpperCase() : group.bookings[0].id.slice(-8).toUpperCase()}
+                        {group.type === 'round_trip' && (
+                          <span className="ml-2 text-sm font-normal text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            Round Trip
+                          </span>
+                        )}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Booked on {formatDateTime(booking.created_at)}
+                        Booked on {formatDateTime(group.created_at)}
                       </p>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(booking.status || 'confirmed')}`}>
-                      {(booking.status || 'confirmed').toUpperCase()}
+                    <div className="px-3 py-1 rounded-full text-xs font-medium border bg-green-50 border-green-200 text-green-800">
+                      CONFIRMED
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Flight Details */}
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-lg">
-                        {booking.flight?.airline} {booking.flight?.flight_number}
-                      </h4>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          {formatPrice(Number(booking.flight?.price || 0))}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Total</p>
-                      </div>
+                  {group.type === 'round_trip' ? (
+                    // Round trip display
+                    <div className="space-y-4">
+                      {group.bookings.map((booking, index) => (
+                        <div key={booking.id} className="bg-muted/50 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-lg">
+                              <span className="text-sm font-normal text-muted-foreground mr-2">
+                                {index === 0 ? 'Outbound:' : 'Return:'}
+                              </span>
+                              {booking.flight?.airline} {booking.flight?.flight_number}
+                            </h4>
+                            <div className="text-right">
+                              <p className="text-xl font-bold text-primary">
+                                {formatPrice(Number(booking.flight?.price || 0))}
+                              </p>
+                              <p className="text-sm text-muted-foreground">per person</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">{booking.flight?.source} → {booking.flight?.destination}</p>
+                                <p className="text-sm text-muted-foreground">Route</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">{booking.flight?.departure_date && formatDate(booking.flight.departure_date)}</p>
+                                <p className="text-sm text-muted-foreground">Departure Date</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">
+                                  {booking.flight?.departure_time && formatTime(booking.flight.departure_time)} - {booking.flight?.arrival_time && formatTime(booking.flight.arrival_time)}
+                                </p>
+                                <p className="text-sm text-muted-foreground">Flight Time</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">{booking.fullname}</p>
+                              <p className="text-sm text-muted-foreground">{booking.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Route */}
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">
-                            {booking.flight?.source} → {booking.flight?.destination}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Route</p>
+                  ) : (
+                    // Single booking display
+                    <div className="space-y-4">
+                      <div className="bg-muted/50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-lg">
+                            {group.bookings[0].flight?.airline} {group.bookings[0].flight?.flight_number}
+                          </h4>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">
+                              {formatPrice(Number(group.bookings[0].flight?.price || 0))}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Total</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">
+                                {group.bookings[0].flight?.source} → {group.bookings[0].flight?.destination}
+                              </p>
+                              <p className="text-sm text-muted-foreground">Route</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">
+                                {group.bookings[0].flight?.departure_date && formatDate(group.bookings[0].flight.departure_date)}
+                              </p>
+                              <p className="text-sm text-muted-foreground">Departure Date</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">
+                                {group.bookings[0].flight?.departure_time && formatTime(group.bookings[0].flight.departure_time)} - {group.bookings[0].flight?.arrival_time && formatTime(group.bookings[0].flight.arrival_time)}
+                              </p>
+                              <p className="text-sm text-muted-foreground">Flight Time</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Date */}
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <User className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <p className="font-medium">
-                            {booking.flight?.departure_date && formatDate(booking.flight.departure_date)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Departure Date</p>
-                        </div>
-                      </div>
-
-                      {/* Time */}
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">
-                            {booking.flight?.departure_time && formatTime(booking.flight.departure_time)} - {booking.flight?.arrival_time && formatTime(booking.flight.arrival_time)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Flight Time</p>
+                          <p className="font-medium">{group.bookings[0].fullname}</p>
+                          <p className="text-sm text-muted-foreground">{group.bookings[0].email}</p>
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Passenger Details */}
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{booking.fullname}</p>
-                      <p className="text-sm text-muted-foreground">{booking.email}</p>
-                    </div>
-                  </div>
-
-
+                  )}
                 </CardContent>
               </Card>
             ))}

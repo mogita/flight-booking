@@ -157,7 +157,20 @@ export function BookingForm({
       await new Promise(resolve => setTimeout(resolve, 2000))
 
       // Create booking after successful payment simulation
-      const booking = await createBooking(api.bookings.create, bookingData)
+      if (isRoundTrip && outboundFlight && returnFlight) {
+        // Create round trip booking
+        const roundTripBookingData = {
+          outbound_flight_id: outboundFlight.id,
+          return_flight_id: returnFlight.id,
+          fullname: data.fullname,
+          email: data.email,
+          phone: data.phone,
+        }
+        const booking = await createBooking(api.bookings.createRoundTrip, roundTripBookingData)
+      } else {
+        // Create single booking
+        const booking = await createBooking(api.bookings.create, bookingData)
+      }
 
       setPaymentStep('confirmation')
 

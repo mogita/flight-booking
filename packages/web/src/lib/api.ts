@@ -1,13 +1,14 @@
-import type { 
-  Flight, 
-  FlightSearchParams, 
+import type {
+  Flight,
+  FlightSearchParams,
   FlightSearchResponse,
   Booking,
   CreateBookingRequest,
+  CreateRoundTripBookingRequest,
   BookingWithFlight,
   LoginRequest,
   LoginResponse,
-  ApiResponse 
+  ApiResponse
 } from '@flight-booking/shared'
 
 // API Configuration
@@ -149,6 +150,14 @@ export const flightsApi = {
 export const bookingsApi = {
   create: async (booking: CreateBookingRequest): Promise<Booking> => {
     const response = await apiRequest<ApiResponse<Booking>>('/bookings', {
+      method: 'POST',
+      body: JSON.stringify(booking),
+    })
+    return response.data!
+  },
+
+  createRoundTrip: async (booking: CreateRoundTripBookingRequest): Promise<any> => {
+    const response = await apiRequest<ApiResponse<any>>('/bookings/round-trip', {
       method: 'POST',
       body: JSON.stringify(booking),
     })
