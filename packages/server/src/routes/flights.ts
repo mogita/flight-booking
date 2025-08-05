@@ -16,8 +16,7 @@ const flightSearchSchema = z.object({
   departure_date: z.string().optional(),
   return_date: z.string().optional(),
   is_round_trip: z.string().transform(val => val === 'true').optional(),
-  sort_by: z.enum(['price', 'departure_time', 'arrival_time']).optional().default('departure_time'),
-  sort_order: z.enum(['asc', 'desc']).optional().default('asc'),
+  sort_by: z.enum(['price_asc', 'price_desc', 'departure_asc', 'departure_desc', 'duration_asc']).optional().default('price_asc'),
   page: z.string().transform(Number).optional().default('1'),
   limit: z.string().transform(Number).optional().default('10'),
 })
@@ -37,7 +36,6 @@ router.get('/', validateRequest({ query: flightSearchSchema }), async (req, res,
       return_date,
       is_round_trip,
       sort_by,
-      sort_order,
       page,
       limit,
     } = req.query
@@ -70,9 +68,29 @@ router.get('/', validateRequest({ query: flightSearchSchema }), async (req, res,
     // Round trip is handled by combining two one-way flights
     conditions.push(eq(flights.is_round_trip, false))
 
-    // Build order by clause
-    const orderColumn = flights[sort_by as keyof typeof flights]
-    const orderDirection = sort_order === 'desc' ? desc(orderColumn) : asc(orderColumn)
+    // Build order by clause based on sort_by option
+    let orderClause
+    switch (sort_by) {
+      case 'price_asc':
+        orderClause = asc(flights.price)
+        break
+      case 'price_desc':
+        orderClause = desc(flights.price)
+        break
+      case 'departure_asc':
+        orderClause = asc(flights.departure_time)
+        break
+      case 'departure_desc':
+        orderClause = desc(flights.departure_time)
+        break
+      case 'duration_asc':
+        // For duration, we need to calculate the difference between arrival and departure times
+        // Using SQL to calculate duration in minutes
+        orderClause = asc(sql`EXTRACT(EPOCH FROM (${flights.arrival_time} - ${flights.departure_time})) / 60`)
+        break
+      default:
+        orderClause = asc(flights.price) // Default to price ascending
+    }
 
     // Calculate offset
     const offset = (page - 1) * limit
@@ -90,7 +108,7 @@ router.get('/', validateRequest({ query: flightSearchSchema }), async (req, res,
       .select()
       .from(flights)
       .where(and(...conditions))
-      .orderBy(orderDirection)
+      .orderBy(orderClause)
       .limit(limit)
       .offset(offset)
 

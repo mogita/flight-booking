@@ -15,6 +15,8 @@ export function HomePage() {
   const [searchResults, setSearchResults] = useState<FlightSearchResponse | null>(null)
   const [returnSearchResults, setReturnSearchResults] = useState<FlightSearchResponse | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [currentSort, setCurrentSort] = useState<'price_asc' | 'price_desc' | 'departure_asc' | 'departure_desc' | 'duration_asc'>('price_asc')
+  const [lastSearchParams, setLastSearchParams] = useState<any>(null)
   const { execute: searchFlights, isLoading, error } = useAsyncOperation<FlightSearchResponse, any>()
 
   const {
@@ -43,9 +45,11 @@ export function HomePage() {
         departure_date: formData.departureDate.toISOString().split('T')[0],
         page: 1,
         limit: 10,
-        sort_by: 'price' as const,
-        sort_order: 'asc' as const,
+        sort_by: currentSort,
       }
+
+      // Store search params for re-sorting
+      setLastSearchParams(outboundParams)
 
       try {
         const outboundResults = await searchFlights(api.flights.search, outboundParams)
@@ -61,8 +65,7 @@ export function HomePage() {
             departure_date: formData.returnDate.toISOString().split('T')[0],
             page: 1,
             limit: 10,
-            sort_by: 'price' as const,
-            sort_order: 'asc' as const,
+            sort_by: currentSort,
           }
 
           const returnResults = await searchFlights(api.flights.search, returnParams)
@@ -79,7 +82,8 @@ export function HomePage() {
           formData.source.split('(')[1]?.replace(')', '') || 'NRT',
           formData.destination.split('(')[1]?.replace(')', '') || 'KIX',
           1,
-          10
+          10,
+          currentSort
         )
         setSearchResults(mockResults)
         setOutboundFlights(mockResults?.flights || [])
@@ -130,15 +134,40 @@ export function HomePage() {
     }
   }
 
-  const handleSortChange = async (sortBy: string) => {
-    if (!searchResults) return
+  const handleSortChange = async (sortBy: 'price_asc' | 'price_desc' | 'departure_asc' | 'departure_desc' | 'duration_asc') => {
+    if (!lastSearchParams) return
 
     try {
-      // In a real implementation, you would re-search with the new sort order
-      console.log('Sort by:', sortBy)
+      // Update current sort
+      setCurrentSort(sortBy)
 
-      // For demo purposes, we'll just log the sort change
-      // The FlightSearchResults component handles client-side sorting
+      // Re-search with new sort order
+      const newParams = {
+        ...lastSearchParams,
+        sort_by: sortBy,
+        page: 1, // Reset to first page when sorting
+      }
+
+      const outboundResults = await searchFlights(api.flights.search, newParams)
+      setSearchResults(outboundResults)
+      setOutboundFlights(outboundResults?.flights || [])
+      setCurrentPage(1)
+
+      // If round trip, also re-search return flights with new sort
+      if (isRoundTrip && returnSearchResults) {
+        const returnParams = {
+          source: lastSearchParams.destination,
+          destination: lastSearchParams.source,
+          departure_date: lastSearchParams.return_date || lastSearchParams.departure_date,
+          page: 1,
+          limit: 10,
+          sort_by: sortBy,
+        }
+
+        const returnResults = await searchFlights(api.flights.search, returnParams)
+        setReturnSearchResults(returnResults)
+        setReturnFlights(returnResults?.flights || [])
+      }
     } catch (error) {
       console.error('Failed to change sort:', error)
     }

@@ -21,8 +21,7 @@ export interface FlightSearchParams {
   departure_date?: string
   return_date?: string
   is_round_trip?: boolean
-  sort_by?: 'price' | 'departure_time' | 'arrival_time'
-  sort_order?: 'asc' | 'desc'
+  sort_by?: 'price_asc' | 'price_desc' | 'departure_asc' | 'departure_desc' | 'duration_asc'
   page?: number
   limit?: number
 }

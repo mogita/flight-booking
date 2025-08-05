@@ -92,7 +92,8 @@ export function generateMockSearchResults(
   source: string = 'NRT',
   destination: string = 'KIX',
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  sortBy: 'price_asc' | 'price_desc' | 'departure_asc' | 'departure_desc' | 'duration_asc' = 'price_asc'
 ): FlightSearchResponse {
   // Generate more flights for pagination testing
   const allFlights: Flight[] = []
@@ -132,7 +133,27 @@ export function generateMockSearchResults(
       updated_at: '2024-08-05T00:00:00Z',
     })
   }
-  
+
+  // Sort flights based on sortBy parameter
+  allFlights.sort((a, b) => {
+    switch (sortBy) {
+      case 'price_asc':
+        return a.price - b.price
+      case 'price_desc':
+        return b.price - a.price
+      case 'departure_asc':
+        return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()
+      case 'departure_desc':
+        return new Date(b.departure_time).getTime() - new Date(a.departure_time).getTime()
+      case 'duration_asc':
+        const durationA = new Date(a.arrival_time).getTime() - new Date(a.departure_time).getTime()
+        const durationB = new Date(b.arrival_time).getTime() - new Date(b.departure_time).getTime()
+        return durationA - durationB
+      default:
+        return 0
+    }
+  })
+
   // Paginate results
   const startIndex = (page - 1) * limit
   const endIndex = startIndex + limit

@@ -105,25 +105,7 @@ export function FlightSearchResults({
     )
   }
 
-  // Sort flights based on selected option
-  const sortedFlights = [...flights].sort((a, b) => {
-    switch (sortBy) {
-      case 'price_asc':
-        return a.price - b.price
-      case 'price_desc':
-        return b.price - a.price
-      case 'departure_asc':
-        return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()
-      case 'departure_desc':
-        return new Date(b.departure_time).getTime() - new Date(a.departure_time).getTime()
-      case 'duration_asc':
-        const durationA = new Date(a.arrival_time).getTime() - new Date(a.departure_time).getTime()
-        const durationB = new Date(b.arrival_time).getTime() - new Date(b.departure_time).getTime()
-        return durationA - durationB
-      default:
-        return 0
-    }
-  })
+  // Flights are now sorted on the server side, so we use them directly
 
 
 
@@ -165,7 +147,7 @@ export function FlightSearchResults({
 
       {/* Flight Cards */}
       <div className="space-y-6">
-        {sortedFlights.map((flight) => {
+        {flights.map((flight) => {
           const isSelected = selectedFlight?.id === flight.id
 
           // Determine if this flight should be disabled
