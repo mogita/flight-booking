@@ -42,7 +42,11 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
       source: '',
       destination: '',
       isRoundTrip: false,
-      departureDate: new Date('2025-01-15'), // Set to date with available flights for demo
+      departureDate: (() => {
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        return tomorrow
+      })(), // Set to tomorrow by default
     },
   })
 
@@ -179,7 +183,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
               </Label>
               <DatePicker
                 value={watchedDepartureDate}
-                onChange={(date) => setValue('departureDate', date)}
+                onChange={(date) => date && setValue('departureDate', date)}
                 minDate={today}
                 maxDate={maxDate}
                 placeholder="Select departure date"
