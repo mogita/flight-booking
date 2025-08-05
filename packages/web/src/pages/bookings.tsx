@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Plane, User, CreditCard } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plane, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading'
@@ -190,20 +190,7 @@ export function BookingsPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Download Ticket
-                    </Button>
-                    {(booking.status || 'confirmed').toLowerCase() === 'confirmed' && (
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                        Cancel Booking
-                      </Button>
-                    )}
-                  </div>
+
                 </CardContent>
               </Card>
             ))}

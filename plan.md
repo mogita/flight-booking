@@ -1,4 +1,4 @@
-# Rakuten Flight Booking Application - Implementation Plan
+# Flight Booking Application - Implementation Plan
 
 ## Project Overview
 
