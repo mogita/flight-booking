@@ -36,9 +36,12 @@ export const bookingSchema = z.object({
     .email('Please enter a valid email address')
     .min(1, 'Email is required'),
   phone: z.string()
-    .regex(/^\+[1-9]\d{1,14}$/, 'Please enter a valid phone number (e.g., +1234567890)')
     .optional()
-    .or(z.literal('')),
+    .nullable()
+    .transform((val) => val?.trim() || '')
+    .refine((val) => !val || val === '' || /^\+[1-9]\d{1,14}$/.test(val), {
+      message: 'Please enter a valid phone number (e.g., +1234567890)'
+    }),
 })
 
 // Payment validation schema

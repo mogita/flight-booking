@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
+import type { ZodError } from 'zod'
 import { CreditCard, Lock, Shield, User, Mail, Phone } from 'lucide-react'
 import type { Flight } from '@flight-booking/shared'
 import { Button } from '@/components/ui/button'
@@ -25,15 +26,7 @@ interface BookingFormProps {
   isRoundTrip?: boolean
 }
 
-// Security: Input sanitization patterns
-const SECURITY_PATTERNS = {
-  name: /^[a-zA-Z\s\-'\.]{2,100}$/,
-  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone: /^[\+]?[0-9\s\-\(\)]{10,15}$/,
-  cardNumber: /^[0-9\s]{13,19}$/,
-  cvv: /^[0-9]{3,4}$/,
-  expiryDate: /^(0[1-9]|1[0-2])\/([0-9]{2})$/,
-}
+
 
 export function BookingForm({
   flight,
@@ -59,11 +52,52 @@ export function BookingForm({
     )
   }
 
+  // Custom resolver that handles Zod errors safely
+  const safeZodResolver = (schema: any) => {
+    return async (values: any, context: any, options: any) => {
+      try {
+        const result = await zodResolver(schema)(values, context, options)
+        return result
+      } catch (error) {
+        // If it's a ZodError, convert it to React Hook Form format
+        if (error && typeof error === 'object' && 'issues' in error) {
+          const zodError = error as ZodError
+          const formErrors: any = {}
+
+          zodError.issues.forEach((issue) => {
+            const path = issue.path.join('.')
+            if (!formErrors[path]) {
+              formErrors[path] = {
+                type: issue.code,
+                message: issue.message
+              }
+            }
+          })
+
+          return {
+            values: {},
+            errors: formErrors
+          }
+        }
+
+        // Fallback for other errors
+        return {
+          values: {},
+          errors: {
+            root: {
+              type: 'validation',
+              message: 'Validation failed'
+            }
+          }
+        }
+      }
+    }
+  }
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
     setValue,
     trigger,
   } = useForm<BookingFormData & {
@@ -73,8 +107,8 @@ export function BookingForm({
     cvv: string
     cardholderName: string
   }>({
-    resolver: zodResolver(fullBookingSchema),
-    mode: 'onChange', // Validate on change for real-time feedback
+    resolver: safeZodResolver(fullBookingSchema),
+    mode: 'onBlur', // Change to onBlur to avoid constant validation errors
     defaultValues: {
       flightId: primaryFlight.id,
       fullname: user?.username || '',
@@ -89,14 +123,14 @@ export function BookingForm({
   })
 
   // Security: Input sanitization
-  const sanitizeInput = (value: string, pattern: RegExp): string => {
+  const sanitizeInput = (value: string): string => {
     return value.replace(/[<>\"'&]/g, '').trim().substring(0, 200)
   }
 
-  const handleInputChange = (field: string, pattern: RegExp) => (
+  const handleInputChange = (field: string) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const sanitized = sanitizeInput(e.target.value, pattern)
+    const sanitized = sanitizeInput(e.target.value)
     setValue(field as any, sanitized)
   }
 
@@ -123,7 +157,7 @@ export function BookingForm({
     return digits
   }
 
-  const onSubmitDetails = async (data: any) => {
+  const onSubmitDetails = async () => {
     if (!isAuthenticated) {
       navigate('/login', { state: { returnTo: `/book?flight=${primaryFlight.id}` } })
       return
@@ -148,9 +182,9 @@ export function BookingForm({
       // Payment details are handled client-side for demo
       const bookingData = {
         flight_id: primaryFlight.id, // Server expects snake_case
-        fullname: sanitizeInput(data.fullname, SECURITY_PATTERNS.name),
-        email: sanitizeInput(data.email, SECURITY_PATTERNS.email),
-        phone: data.phone ? sanitizeInput(data.phone, SECURITY_PATTERNS.phone) : undefined,
+        fullname: sanitizeInput(data.fullname),
+        email: sanitizeInput(data.email),
+        phone: data.phone ? sanitizeInput(data.phone) : undefined,
       }
 
       // Simulate payment processing (in real app, use secure payment gateway)
@@ -166,10 +200,10 @@ export function BookingForm({
           email: data.email,
           phone: data.phone,
         }
-        const booking = await createBooking(api.bookings.createRoundTrip, roundTripBookingData)
+        await createBooking(api.bookings.createRoundTrip, roundTripBookingData)
       } else {
         // Create single booking
-        const booking = await createBooking(api.bookings.create, bookingData)
+        await createBooking(api.bookings.create, bookingData)
       }
 
       setPaymentStep('confirmation')
@@ -331,7 +365,7 @@ export function BookingForm({
                   <Input
                     id="fullname"
                     {...register('fullname')}
-                    onChange={handleInputChange('fullname', SECURITY_PATTERNS.name)}
+                    onChange={handleInputChange('fullname')}
                     placeholder="Enter your full name as it appears on your ID"
                     className={errors.fullname ? 'border-destructive' : ''}
                   />
@@ -350,7 +384,7 @@ export function BookingForm({
                     id="email"
                     type="email"
                     {...register('email')}
-                    onChange={handleInputChange('email', SECURITY_PATTERNS.email)}
+                    onChange={handleInputChange('email')}
                     placeholder="Enter your email address"
                     className={errors.email ? 'border-destructive' : ''}
                   />
@@ -369,8 +403,7 @@ export function BookingForm({
                     id="phone"
                     type="tel"
                     {...register('phone')}
-                    onChange={handleInputChange('phone', SECURITY_PATTERNS.phone)}
-                    placeholder="Enter your phone number"
+                    placeholder="Enter your phone number (e.g., +1234567890)"
                     className={errors.phone ? 'border-destructive' : ''}
                   />
                   {errors.phone && (
