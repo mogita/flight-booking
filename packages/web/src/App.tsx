@@ -12,8 +12,8 @@ import { RegisterPage } from '@/pages/register'
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="flight-booking-ui-theme">
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -24,8 +24,8 @@ function App() {
               <Route path="/bookings" element={<BookingsPage />} />
             </Routes>
           </Layout>
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   )
 }

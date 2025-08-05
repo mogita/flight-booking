@@ -11,7 +11,14 @@ import type {
 } from '@flight-booking/shared'
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+// Global redirect handler for 401 errors
+let redirectToLogin: ((path?: string) => void) | null = null
+
+export const setAuthRedirectHandler = (handler: (path?: string) => void) => {
+  redirectToLogin = handler
+}
 
 // API Error class
 export class ApiError extends Error {
@@ -54,6 +61,15 @@ async function apiRequest<T>(
     const data = await response.json()
 
     if (!response.ok) {
+      // Handle 401 Unauthorized errors with automatic redirect
+      if (response.status === 401 && redirectToLogin) {
+        // Clear invalid token
+        localStorage.removeItem('auth-token')
+        // Redirect to login with current path as return URL
+        redirectToLogin(window.location.pathname + window.location.search)
+        return // Don't throw error, let redirect handle it
+      }
+
       throw new ApiError(
         data.error || data.message || 'An error occurred',
         response.status,

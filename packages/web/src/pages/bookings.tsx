@@ -87,30 +87,7 @@ export function BookingsPage() {
   }
 
   return (
-    <ProtectedRoute
-      fallback={
-        <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>Authentication Required</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Please log in to view your bookings.
-              </p>
-              <Button 
-                onClick={() => navigate('/login', { 
-                  state: { returnTo: '/bookings' } 
-                })} 
-                className="w-full"
-              >
-                Log In
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      }
-    >
+    <ProtectedRoute>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
