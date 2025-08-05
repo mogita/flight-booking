@@ -123,7 +123,7 @@ export function LoginPage() {
         return
       }
 
-      if (data.username.length < 3 || data.password.length < 6) {
+      if (data.username.length < 3 || data.password.length < 3) {
         return
       }
 
@@ -195,8 +195,8 @@ export function LoginPage() {
                 <span className="font-semibold">Demo Credentials</span>
               </div>
               <p className="text-sm text-blue-700 mt-1">
-                Username: <code className="bg-blue-100 px-1 rounded">demo</code> | 
-                Password: <code className="bg-blue-100 px-1 rounded">password123</code>
+                Username: <code className="bg-blue-100 px-1 rounded">user</code> |
+                Password: <code className="bg-blue-100 px-1 rounded">user</code>
               </p>
             </div>
 
