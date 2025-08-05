@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@/hooks/use-theme'
 import { AuthProvider } from '@/hooks/use-auth'
+import { RoundTripBookingProvider } from '@/hooks/use-round-trip-booking'
 import { Layout } from '@/components/layout/layout'
 import { HomePage } from '@/pages/home'
 import { DemoFlightsPage } from '@/pages/demo-flights'
@@ -14,16 +15,18 @@ function App() {
     <ThemeProvider defaultTheme="system" storageKey="flight-booking-ui-theme">
       <Router>
         <AuthProvider>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/demo-flights" element={<DemoFlightsPage />} />
-              <Route path="/book" element={<BookingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/bookings" element={<BookingsPage />} />
-            </Routes>
-          </Layout>
+          <RoundTripBookingProvider>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/demo-flights" element={<DemoFlightsPage />} />
+                <Route path="/book" element={<BookingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/bookings" element={<BookingsPage />} />
+              </Routes>
+            </Layout>
+          </RoundTripBookingProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>

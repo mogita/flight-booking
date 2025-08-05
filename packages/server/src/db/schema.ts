@@ -24,6 +24,18 @@ export const bookings = pgTable('bookings', {
   fullname: varchar('fullname', { length: 200 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 50 }),
+  booking_type: varchar('booking_type', { length: 20 }).default('one_way').notNull(),
+  round_trip_booking_id: text('round_trip_booking_id').references(() => roundTripBookings.id),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+  deleted_at: timestamp('deleted_at'),
+})
+
+export const roundTripBookings = pgTable('round_trip_bookings', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  outbound_booking_id: text('outbound_booking_id').references(() => bookings.id).notNull(),
+  return_booking_id: text('return_booking_id').references(() => bookings.id).notNull(),
+  total_price: decimal('total_price', { precision: 10, scale: 2 }).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
   deleted_at: timestamp('deleted_at'),
@@ -33,3 +45,5 @@ export type Flight = typeof flights.$inferSelect
 export type NewFlight = typeof flights.$inferInsert
 export type Booking = typeof bookings.$inferSelect
 export type NewBooking = typeof bookings.$inferInsert
+export type RoundTripBooking = typeof roundTripBookings.$inferSelect
+export type NewRoundTripBooking = typeof roundTripBookings.$inferInsert

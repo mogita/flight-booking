@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
-import { Plane, Clock, ArrowRight, Star } from 'lucide-react'
+import { Plane, Clock, ArrowRight, Star, Check, X } from 'lucide-react'
 import type { Flight } from '@flight-booking/shared'
+import type { RoundTripBookingStep } from '@/hooks/use-round-trip-booking'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -10,9 +11,23 @@ interface FlightCardProps {
   onBook: (flight: Flight) => void
   className?: string
   showRating?: boolean
+  // Round trip booking props
+  isSelected?: boolean
+  isDisabled?: boolean
+  isRoundTrip?: boolean
+  currentStep?: RoundTripBookingStep
 }
 
-export function FlightCard({ flight, onBook, className, showRating = false }: FlightCardProps) {
+export function FlightCard({
+  flight,
+  onBook,
+  className,
+  showRating = false,
+  isSelected = false,
+  isDisabled = false,
+  isRoundTrip = false,
+  currentStep = 'select_outbound'
+}: FlightCardProps) {
   const formatTime = (dateString: string) => {
     return format(new Date(dateString), 'HH:mm')
   }
@@ -47,8 +62,31 @@ export function FlightCard({ flight, onBook, className, showRating = false }: Fl
 
   const rating = generateRating(flight.flight_number)
 
+  const getButtonText = () => {
+    if (isSelected) return 'Selected'
+    if (isRoundTrip) {
+      if (currentStep === 'select_outbound') return 'Select Outbound'
+      if (currentStep === 'select_return') return 'Select Return'
+    }
+    return 'Book Flight'
+  }
+
+  const getCardClassName = () => {
+    let baseClass = 'hover:shadow-lg transition-all duration-200 border-l-4'
+
+    if (isSelected) {
+      baseClass += ' border-l-green-500 bg-green-50 dark:bg-green-950/20'
+    } else if (isDisabled) {
+      baseClass += ' border-l-gray-300 opacity-50 cursor-not-allowed'
+    } else {
+      baseClass += ' border-l-primary/20'
+    }
+
+    return cn(baseClass, className)
+  }
+
   return (
-    <Card className={cn('hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20', className)}>
+    <Card className={getCardClassName()}>
       <CardContent className="p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Flight Info */}
@@ -133,13 +171,39 @@ export function FlightCard({ flight, onBook, className, showRating = false }: Fl
             </div>
             
             {/* Book Button */}
-            <Button
-              onClick={() => onBook(flight)}
-              size="lg"
-              className="whitespace-nowrap px-8 shadow-md hover:shadow-lg transition-shadow"
-            >
-              Book Flight
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={() => onBook(flight)}
+                size="lg"
+                disabled={isDisabled}
+                variant={isSelected ? "default" : "default"}
+                className={cn(
+                  "whitespace-nowrap px-8 shadow-md hover:shadow-lg transition-shadow",
+                  isSelected && "bg-green-600 hover:bg-green-700",
+                  isDisabled && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isSelected && <Check className="h-4 w-4 mr-2" />}
+                {isDisabled && <X className="h-4 w-4 mr-2" />}
+                {getButtonText()}
+              </Button>
+
+              {/* Cancel Selection Button for Round Trip */}
+              {isSelected && isRoundTrip && currentStep === 'select_return' && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // This will be handled by the parent component
+                    // For now, we'll just show the button
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                >
+                  Cancel Selection
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

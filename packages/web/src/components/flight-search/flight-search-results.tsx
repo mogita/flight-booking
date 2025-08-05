@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plane, Filter } from 'lucide-react'
 import type { Flight, FlightSearchResponse } from '@flight-booking/shared'
+import type { RoundTripBookingStep } from '@/hooks/use-round-trip-booking'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select } from '@/components/ui/select'
 import { FlightCardSkeleton } from '@/components/ui/loading'
@@ -17,6 +18,11 @@ interface FlightSearchResultsProps {
   onPageChange?: (page: number) => void
   onSortChange?: (sortBy: SortOption) => void
   className?: string
+  // Round trip booking props
+  selectedFlight?: Flight | null
+  isRoundTrip?: boolean
+  currentStep?: RoundTripBookingStep
+  flightType?: 'outbound' | 'return' // New prop to distinguish flight type
 }
 
 type SortOption = 'price_asc' | 'price_desc' | 'departure_asc' | 'departure_desc' | 'duration_asc'
@@ -37,6 +43,10 @@ export function FlightSearchResults({
   onPageChange,
   onSortChange,
   className,
+  selectedFlight,
+  isRoundTrip = false,
+  currentStep = 'select_outbound',
+  flightType = 'outbound',
 }: FlightSearchResultsProps) {
   const [sortBy, setSortBy] = useState<SortOption>('price_asc')
 
@@ -155,14 +165,37 @@ export function FlightSearchResults({
 
       {/* Flight Cards */}
       <div className="space-y-6">
-        {sortedFlights.map((flight) => (
-          <FlightCard
-            key={flight.id}
-            flight={flight}
-            onBook={onBookFlight}
-            showRating={true}
-          />
-        ))}
+        {sortedFlights.map((flight) => {
+          const isSelected = selectedFlight?.id === flight.id
+
+          // Determine if this flight should be disabled
+          let isDisabled = false
+          let effectiveStep = currentStep
+
+          if (isRoundTrip) {
+            if (flightType === 'return') {
+              // Return flights are disabled until outbound is selected
+              isDisabled = currentStep === 'select_outbound'
+              effectiveStep = 'select_return'
+            } else {
+              // Outbound flights
+              effectiveStep = 'select_outbound'
+            }
+          }
+
+          return (
+            <FlightCard
+              key={flight.id}
+              flight={flight}
+              onBook={onBookFlight}
+              showRating={true}
+              isSelected={isSelected}
+              isDisabled={isDisabled}
+              isRoundTrip={isRoundTrip}
+              currentStep={effectiveStep}
+            />
+          )
+        })}
       </div>
 
       {/* Pagination */}

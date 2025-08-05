@@ -16,10 +16,16 @@ export function BookingPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [flight, setFlight] = useState<Flight | null>(null)
+  const [outboundFlight, setOutboundFlight] = useState<Flight | null>(null)
+  const [returnFlight, setReturnFlight] = useState<Flight | null>(null)
+  const [isRoundTrip, setIsRoundTrip] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
   // Get flight data from location state or search params
   const flightFromState = location.state?.flight as Flight | undefined
+  const outboundFlightFromState = location.state?.outboundFlight as Flight | undefined
+  const returnFlightFromState = location.state?.returnFlight as Flight | undefined
+  const isRoundTripFromState = location.state?.isRoundTrip as boolean | undefined
   const flightIdFromParams = searchParams.get('flight')
 
   // Fetch flight data if not provided in state
@@ -33,20 +39,28 @@ export function BookingPage() {
   )
 
   useEffect(() => {
-    if (flightFromState) {
-      // Flight data passed from search results
+    if (outboundFlightFromState && returnFlightFromState && isRoundTripFromState) {
+      // Round trip booking data passed from search results
+      setOutboundFlight(outboundFlightFromState)
+      setReturnFlight(returnFlightFromState)
+      setIsRoundTrip(true)
+      setError(null)
+    } else if (flightFromState) {
+      // Single flight data passed from search results
       setFlight(flightFromState)
+      setIsRoundTrip(false)
       setError(null)
     } else if (fetchedFlight) {
       // Flight data fetched by ID
       setFlight(fetchedFlight)
+      setIsRoundTrip(false)
       setError(null)
     } else if (fetchError) {
       setError(fetchError)
-    } else if (!flightIdFromParams && !flightFromState) {
+    } else if (!flightIdFromParams && !flightFromState && !outboundFlightFromState) {
       setError('No flight selected. Please select a flight from the search results.')
     }
-  }, [flightFromState, fetchedFlight, fetchError, flightIdFromParams])
+  }, [flightFromState, outboundFlightFromState, returnFlightFromState, isRoundTripFromState, fetchedFlight, fetchError, flightIdFromParams])
 
   const handleGoBack = () => {
     // Go back to search results or home page
@@ -79,7 +93,7 @@ export function BookingPage() {
     )
   }
 
-  if (!flight) {
+  if (!flight && !outboundFlight) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-md mx-auto">
@@ -128,7 +142,12 @@ export function BookingPage() {
         </div>
 
         {/* Booking Form */}
-        <BookingForm flight={flight} />
+        <BookingForm
+          flight={flight}
+          outboundFlight={outboundFlight}
+          returnFlight={returnFlight}
+          isRoundTrip={isRoundTrip}
+        />
       </div>
     </ProtectedRoute>
   )

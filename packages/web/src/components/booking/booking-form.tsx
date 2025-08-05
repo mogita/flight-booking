@@ -17,8 +17,12 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 interface BookingFormProps {
-  flight: Flight
+  flight: Flight | null
   className?: string
+  // Round trip booking props
+  outboundFlight?: Flight | null
+  returnFlight?: Flight | null
+  isRoundTrip?: boolean
 }
 
 // Security: Input sanitization patterns
@@ -31,12 +35,29 @@ const SECURITY_PATTERNS = {
   expiryDate: /^(0[1-9]|1[0-2])\/([0-9]{2})$/,
 }
 
-export function BookingForm({ flight, className }: BookingFormProps) {
+export function BookingForm({
+  flight,
+  className,
+  outboundFlight,
+  returnFlight,
+  isRoundTrip = false
+}: BookingFormProps) {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStep, setPaymentStep] = useState<'details' | 'payment' | 'confirmation'>('details')
   const { execute: createBooking, isLoading, error } = useAsyncOperation()
+
+  // Determine which flight to use for form initialization
+  const primaryFlight = isRoundTrip ? outboundFlight : flight
+
+  if (!primaryFlight) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No flight data available</p>
+      </div>
+    )
+  }
 
   const {
     register,
@@ -55,7 +76,7 @@ export function BookingForm({ flight, className }: BookingFormProps) {
     resolver: zodResolver(fullBookingSchema),
     mode: 'onChange', // Validate on change for real-time feedback
     defaultValues: {
-      flightId: flight.id,
+      flightId: primaryFlight.id,
       fullname: user?.username || '',
       email: '',
       phone: '',
@@ -104,7 +125,7 @@ export function BookingForm({ flight, className }: BookingFormProps) {
 
   const onSubmitDetails = async (data: any) => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { returnTo: `/book?flight=${flight.id}` } })
+      navigate('/login', { state: { returnTo: `/book?flight=${primaryFlight.id}` } })
       return
     }
 
@@ -126,7 +147,7 @@ export function BookingForm({ flight, className }: BookingFormProps) {
       // Security: Only send necessary booking data to server
       // Payment details are handled client-side for demo
       const bookingData = {
-        flight_id: flight.id, // Server expects snake_case
+        flight_id: primaryFlight.id, // Server expects snake_case
         fullname: sanitizeInput(data.fullname, SECURITY_PATTERNS.name),
         email: sanitizeInput(data.email, SECURITY_PATTERNS.email),
         phone: data.phone ? sanitizeInput(data.phone, SECURITY_PATTERNS.phone) : undefined,
@@ -166,10 +187,18 @@ export function BookingForm({ flight, className }: BookingFormProps) {
             Your flight has been successfully booked. You will receive a confirmation email shortly.
           </p>
           <div className="bg-muted p-4 rounded-lg">
-            <p className="font-semibold">{flight.airline} {flight.flight_number}</p>
+            <p className="font-semibold">{primaryFlight.airline} {primaryFlight.flight_number}</p>
             <p className="text-sm text-muted-foreground">
-              {flight.source} → {flight.destination}
+              {primaryFlight.source} → {primaryFlight.destination}
             </p>
+            {isRoundTrip && returnFlight && (
+              <>
+                <p className="font-semibold mt-2">{returnFlight.airline} {returnFlight.flight_number}</p>
+                <p className="text-sm text-muted-foreground">
+                  {returnFlight.source} → {returnFlight.destination}
+                </p>
+              </>
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
             Redirecting to your bookings...
@@ -190,24 +219,67 @@ export function BookingForm({ flight, className }: BookingFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold text-lg">{flight.airline} {flight.flight_number}</h3>
-              <p className="text-muted-foreground">
-                {flight.source} → {flight.destination}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {new Date(flight.departure_time).toLocaleDateString()} at{' '}
-                {new Date(flight.departure_time).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </p>
+          <div className="space-y-4">
+            {/* Outbound Flight */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-lg">
+                  {isRoundTrip ? 'Outbound: ' : ''}{primaryFlight.airline} {primaryFlight.flight_number}
+                </h3>
+                <p className="text-muted-foreground">
+                  {primaryFlight.source} → {primaryFlight.destination}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(primaryFlight.departure_time).toLocaleDateString()} at{' '}
+                  {new Date(primaryFlight.departure_time).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-primary">{formatPrice(primaryFlight.price)}</p>
+                <p className="text-sm text-muted-foreground">per person</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-primary">{formatPrice(flight.price)}</p>
-              <p className="text-sm text-muted-foreground">per person</p>
-            </div>
+
+            {/* Return Flight */}
+            {isRoundTrip && returnFlight && (
+              <div className="flex justify-between items-center border-t pt-4">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    Return: {returnFlight.airline} {returnFlight.flight_number}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {returnFlight.source} → {returnFlight.destination}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(returnFlight.departure_time).toLocaleDateString()} at{' '}
+                    {new Date(returnFlight.departure_time).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-primary">{formatPrice(returnFlight.price)}</p>
+                  <p className="text-sm text-muted-foreground">per person</p>
+                </div>
+              </div>
+            )}
+
+            {/* Total Price for Round Trip */}
+            {isRoundTrip && returnFlight && (
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-lg">Total Price</h3>
+                  <p className="text-3xl font-bold text-primary">
+                    {formatPrice(Number(primaryFlight?.price || 0) + Number(returnFlight?.price || 0))}
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground text-right">per person</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

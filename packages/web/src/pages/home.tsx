@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Flight, FlightSearchResponse } from '@flight-booking/shared'
 import { FlightSearchForm } from '@/components/flight-search/flight-search-form'
 import { FlightSearchResults } from '@/components/flight-search/flight-search-results'
 import { useAsyncOperation } from '@/hooks/use-api'
+import { useRoundTripBooking } from '@/hooks/use-round-trip-booking'
 import { api } from '@/lib/api'
 import { type FlightSearchFormData } from '@/lib/validations'
 import { generateMockSearchResults } from '@/lib/mock-data'
@@ -13,13 +14,27 @@ export function HomePage() {
   const navigate = useNavigate()
   const [searchResults, setSearchResults] = useState<FlightSearchResponse | null>(null)
   const [returnSearchResults, setReturnSearchResults] = useState<FlightSearchResponse | null>(null)
-  const [isRoundTripSearch, setIsRoundTripSearch] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const { execute: searchFlights, isLoading, error } = useAsyncOperation<FlightSearchResponse, any>()
 
+  const {
+    isRoundTrip,
+    selectedOutboundFlight,
+    selectedReturnFlight,
+    currentStep,
+    setIsRoundTrip,
+    setOutboundFlights,
+    setReturnFlights,
+    selectOutboundFlight,
+    selectReturnFlight,
+    resetBooking,
+  } = useRoundTripBooking()
+
   const handleSearch = async (formData: FlightSearchFormData) => {
     try {
-      setIsRoundTripSearch(formData.isRoundTrip)
+      // Update round trip context
+      setIsRoundTrip(formData.isRoundTrip)
+      resetBooking()
 
       // Search for outbound flights
       const outboundParams = {
@@ -35,6 +50,7 @@ export function HomePage() {
       try {
         const outboundResults = await searchFlights(api.flights.search, outboundParams)
         setSearchResults(outboundResults)
+        setOutboundFlights(outboundResults?.flights || [])
         setCurrentPage(1)
 
         // If round trip, also search for return flights
@@ -51,8 +67,10 @@ export function HomePage() {
 
           const returnResults = await searchFlights(api.flights.search, returnParams)
           setReturnSearchResults(returnResults)
+          setReturnFlights(returnResults?.flights || [])
         } else {
           setReturnSearchResults(null)
+          setReturnFlights([])
         }
       } catch (apiError) {
         // Fallback to mock data for demonstration
@@ -64,7 +82,9 @@ export function HomePage() {
           10
         )
         setSearchResults(mockResults)
+        setOutboundFlights(mockResults?.flights || [])
         setReturnSearchResults(null)
+        setReturnFlights([])
         setCurrentPage(1)
       }
     } catch (error) {
@@ -73,8 +93,25 @@ export function HomePage() {
   }
 
   const handleBookFlight = (flight: Flight) => {
-    // Navigate to booking page with flight data
-    navigate('/book', { state: { flight } })
+    if (isRoundTrip) {
+      if (currentStep === 'select_outbound') {
+        // Select outbound flight
+        selectOutboundFlight(flight)
+      } else if (currentStep === 'select_return') {
+        // Select return flight and proceed to booking
+        selectReturnFlight(flight)
+        navigate('/book', {
+          state: {
+            outboundFlight: selectedOutboundFlight,
+            returnFlight: flight,
+            isRoundTrip: true
+          }
+        })
+      }
+    } else {
+      // One-way booking
+      navigate('/book', { state: { flight } })
+    }
   }
 
   const handlePageChange = async (page: number) => {
@@ -123,7 +160,7 @@ export function HomePage() {
           {/* Outbound Flights */}
           <div>
             <h2 className="text-2xl font-bold mb-4">
-              {isRoundTripSearch ? 'Outbound Flights' : 'Flight Results'}
+              {isRoundTrip ? 'Outbound Flights' : ''}
             </h2>
             <FlightSearchResults
               results={searchResults}
@@ -132,11 +169,15 @@ export function HomePage() {
               onBookFlight={handleBookFlight}
               onPageChange={handlePageChange}
               onSortChange={handleSortChange}
+              selectedFlight={selectedOutboundFlight}
+              isRoundTrip={isRoundTrip}
+              currentStep={currentStep}
+              flightType="outbound"
             />
           </div>
 
           {/* Return Flights (Round Trip Only) */}
-          {isRoundTripSearch && returnSearchResults && (
+          {isRoundTrip && returnSearchResults && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Return Flights</h2>
               <FlightSearchResults
@@ -146,6 +187,10 @@ export function HomePage() {
                 onBookFlight={handleBookFlight}
                 onPageChange={() => {}} // Disable pagination for return flights for now
                 onSortChange={() => {}} // Disable sorting for return flights for now
+                selectedFlight={selectedReturnFlight}
+                isRoundTrip={isRoundTrip}
+                currentStep={currentStep}
+                flightType="return"
               />
             </div>
           )}
