@@ -8,8 +8,6 @@ export function ThemeToggle() {
   const toggleTheme = () => {
     if (theme === 'light') {
       setTheme('dark')
-    } else if (theme === 'dark') {
-      setTheme('system')
     } else {
       setTheme('light')
     }
@@ -17,13 +15,11 @@ export function ThemeToggle() {
 
   const getIcon = () => {
     if (theme === 'light') return <Sun className="h-[1.2rem] w-[1.2rem]" />
-    if (theme === 'dark') return <Moon className="h-[1.2rem] w-[1.2rem]" />
-    return <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+    return <Moon className="h-[1.2rem] w-[1.2rem]" />
   }
 
   const getTitle = () => {
     if (theme === 'light') return 'Switch to dark mode'
-    if (theme === 'dark') return 'Switch to system mode'
     return 'Switch to light mode'
   }
 

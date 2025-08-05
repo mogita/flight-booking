@@ -12,7 +12,7 @@ import { RegisterPage } from '@/pages/register'
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="flight-booking-ui-theme">
+    <ThemeProvider defaultTheme="light" storageKey="flight-booking-ui-theme">
       <Router>
         <AuthProvider>
           <RoundTripBookingProvider>
