@@ -248,10 +248,13 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
             </div>
           )}
 
-          {/* Form Errors */}
-          {Object.keys(errors).length > 0 && (
-            <FormError 
-              errors={Object.values(errors).map(error => error?.message || 'Invalid input')} 
+          {/* Form Errors - exclude field-specific errors that are already shown next to fields */}
+          {Object.keys(errors).filter(key => !['source', 'destination', 'departureDate', 'returnDate'].includes(key)).length > 0 && (
+            <FormError
+              errors={Object.entries(errors)
+                .filter(([key]) => !['source', 'destination', 'departureDate', 'returnDate'].includes(key))
+                .map(([, error]) => error?.message || 'Invalid input')
+              }
             />
           )}
 
