@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, desc } from 'drizzle-orm'
 import { validateRequest } from '../middleware/validation'
 import { authenticateToken } from '../middleware/auth'
 import { db } from '../db/connection'
@@ -60,7 +60,7 @@ router.get('/', async (req, res, next) => {
       .from(bookings)
       .leftJoin(flights, eq(bookings.flight_id, flights.id))
       .where(isNull(bookings.deleted_at))
-      .orderBy(bookings.created_at)
+      .orderBy(desc(bookings.created_at))
 
     logger.info('Bookings retrieved', { 
       user: req.user?.username, 

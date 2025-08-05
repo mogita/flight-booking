@@ -135,6 +135,27 @@ describe('Booking Routes', () => {
       })
       expect(Array.isArray(response.body.data)).toBe(true)
     })
+
+    it('should return bookings in descending chronological order (newest first)', async () => {
+      // Get all bookings
+      const response = await request(app)
+        .get('/api/bookings')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+
+      const bookings = response.body.data
+
+      // Verify that if there are multiple bookings, they are sorted by created_at in descending order
+      if (bookings.length > 1) {
+        for (let i = 0; i < bookings.length - 1; i++) {
+          const currentBookingDate = new Date(bookings[i].created_at)
+          const nextBookingDate = new Date(bookings[i + 1].created_at)
+
+          // Current booking should be newer than or equal to the next booking
+          expect(currentBookingDate.getTime()).toBeGreaterThanOrEqual(nextBookingDate.getTime())
+        }
+      }
+    })
   })
 
   describe('GET /api/bookings/:id', () => {

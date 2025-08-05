@@ -49,6 +49,23 @@ export function BookingsPage() {
     })
   }
 
+  const formatDateTime = (dateString: string) => {
+    // The database stores timestamps in Asia/Shanghai timezone but marks them as UTC
+    // We need to adjust for this by subtracting 8 hours to get the actual UTC time
+    const date = new Date(dateString)
+    const adjustedDate = new Date(date.getTime() - (8 * 60 * 60 * 1000)) // Subtract 8 hours
+
+    return adjustedDate.toLocaleString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -122,7 +139,7 @@ export function BookingsPage() {
                         Booking #{booking.id.slice(-8).toUpperCase()}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Booked on {formatDate(booking.created_at)}
+                        Booked on {formatDateTime(booking.created_at)}
                       </p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(booking.status || 'confirmed')}`}>
