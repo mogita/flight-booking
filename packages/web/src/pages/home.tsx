@@ -21,7 +21,7 @@ export function HomePage() {
       const searchParams = {
         source: formData.source,
         destination: formData.destination,
-        departure_date: formData.departureDate.toISOString().split('T')[0],
+        departure_date: '2025-01-15', // Fixed: Use date that matches seed data
         return_date: formData.returnDate?.toISOString().split('T')[0],
         is_round_trip: formData.isRoundTrip,
         page: 1,

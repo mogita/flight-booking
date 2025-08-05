@@ -48,7 +48,17 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
   const watchedDepartureDate = watch('departureDate')
 
   const onSubmit = (data: FlightSearchFormData) => {
-    onSearch(data)
+    // Add default date if missing for demo purposes
+    const formDataWithDefaults = {
+      ...data,
+      departureDate: data.departureDate || new Date('2025-01-15'),
+    }
+
+    onSearch(formDataWithDefaults)
+  }
+
+  const onError = (errors: any) => {
+    console.log('❌ Form validation failed:', errors)
   }
 
   const handleRoundTripToggle = () => {
@@ -89,7 +99,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
           {/* Trip Type Toggle */}
           <div className="flex items-center space-x-4">
             <Label className="text-base font-medium">Trip Type:</Label>

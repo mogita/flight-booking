@@ -11,10 +11,35 @@ export function DemoFlightsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleLoadDemoData = () => {
+  const handleLoadDemoData = async () => {
     setIsLoading(true)
-    
-    // Simulate loading delay
+
+    try {
+      // Try to fetch real data from API first
+      const response = await fetch('http://localhost:3001/api/flights?source=Tokyo%20(NRT)&destination=Osaka%20(KIX)&departure_date=2025-01-15&is_round_trip=false&page=1&limit=10&sort_by=price&sort_order=asc')
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.flights.length > 0) {
+          // Convert API response to expected format
+          const apiResults = {
+            flights: data.data.flights.map((flight: any) => ({
+              ...flight,
+              price: Number(flight.price),
+            })),
+            pagination: data.data.pagination,
+          }
+          setSearchResults(apiResults)
+          setCurrentPage(1)
+          setIsLoading(false)
+          return
+        }
+      }
+    } catch (error) {
+      console.log('API not available, using mock data')
+    }
+
+    // Fallback to mock data with delay
     setTimeout(() => {
       const mockResults = generateMockSearchResults('NRT', 'KIX', 1, 10)
       setSearchResults(mockResults)

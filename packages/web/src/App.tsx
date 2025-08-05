@@ -5,6 +5,7 @@ import { Layout } from '@/components/layout/layout'
 import { HomePage } from '@/pages/home'
 import { DemoFlightsPage } from '@/pages/demo-flights'
 import { BookingPage } from '@/pages/booking'
+import { BookingsPage } from '@/pages/bookings'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
 
@@ -20,12 +21,7 @@ function App() {
               <Route path="/book" element={<BookingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/bookings" element={
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-3xl font-bold">My Bookings</h1>
-                  <p className="text-muted-foreground mt-2">Coming soon...</p>
-                </div>
-              } />
+              <Route path="/bookings" element={<BookingsPage />} />
             </Routes>
           </Layout>
         </Router>

@@ -42,14 +42,15 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const dateValue = e.target.value
       setInputValue(dateValue)
-      
+
       if (dateValue) {
-        const date = new Date(dateValue)
+        const date = new Date(dateValue + 'T00:00:00') // Add time to avoid timezone issues
         if (!isNaN(date.getTime())) {
           // Check date constraints
           if (minDate && date < minDate) return
           if (maxDate && date > maxDate) return
-          
+
+          console.log('📅 DatePicker onChange triggered with date:', date)
           onChange?.(date)
         }
       } else {
