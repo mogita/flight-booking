@@ -7,7 +7,7 @@ export const flightSearchSchema = z.object({
   departureDate: z.date({
     required_error: 'Departure date is required',
     invalid_type_error: 'Please select a valid date',
-  }).optional(), // Temporarily make optional for testing
+  }),
   returnDate: z.date().optional(),
   isRoundTrip: z.boolean().default(false),
 }).refine((data) => {

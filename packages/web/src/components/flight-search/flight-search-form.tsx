@@ -42,19 +42,14 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
       source: '',
       destination: '',
       isRoundTrip: false,
+      departureDate: new Date('2025-01-15'), // Set to date with available flights for demo
     },
   })
 
   const watchedDepartureDate = watch('departureDate')
 
   const onSubmit = (data: FlightSearchFormData) => {
-    // Add default date if missing for demo purposes
-    const formDataWithDefaults = {
-      ...data,
-      departureDate: data.departureDate || new Date('2025-01-15'),
-    }
-
-    onSearch(formDataWithDefaults)
+    onSearch(data)
   }
 
   const onError = (errors: any) => {
@@ -180,6 +175,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
               <Label htmlFor="departureDate" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Departure
+                <span className="text-destructive">*</span>
               </Label>
               <DatePicker
                 value={watchedDepartureDate}
