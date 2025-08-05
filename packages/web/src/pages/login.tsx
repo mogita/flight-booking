@@ -169,6 +169,10 @@ export function LoginPage() {
     }
   }
 
+  const onError = (errors: any) => {
+    console.log('Login form validation failed:', errors)
+  }
+
   const formatLockoutTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
@@ -216,7 +220,7 @@ export function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-4">
               {/* Username */}
               <div className="space-y-2">
                 <Label htmlFor="username" className="flex items-center gap-2">

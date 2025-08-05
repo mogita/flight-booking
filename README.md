@@ -4,11 +4,11 @@ A full-stack flight booking application with search, sorting, and booking functi
 
 ## Tech Stack
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Node.js + Express + TypeScript
-- **Database**: PostgreSQL + Drizzle ORM
-- **Styling**: Tailwind CSS
-- **Package Manager**: pnpm (monorepo)
+- **Frontend**: React 18 + TypeScript + Vite (stateless, easy to deploy and scale)
+- **Backend**: Node.js + Express + TypeScript (common stack for easy team collaboration)
+- **Database**: PostgreSQL + Drizzle ORM (robust and performant database)
+- **Styling**: Tailwind CSS (utility-first CSS for rapid UI development)
+- **Package Manager**: pnpm (monorepo support for shared code)
 
 ## Key Libraries
 
