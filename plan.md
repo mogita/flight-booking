@@ -150,20 +150,20 @@ Word for Augment Code: the playwright MCP is enabled, use it to test any UI rela
 - [x] Add loading and error states
 
 #### 3.6 Booking Page
-- [ ] Create booking page with flight details display
-- [ ] Implement passenger details form:
-  - [ ] Full name input with validation
-  - [ ] Email input with validation
-  - [ ] Phone number input (optional)
-  - [ ] Form submission handling
-- [ ] Add booking confirmation page
-- [ ] Implement success and error states
+- [x] Create booking page with flight details display
+- [x] Implement passenger details form:
+  - [x] Full name input with validation
+  - [x] Email input with validation
+  - [x] Phone number input (optional)
+  - [x] Form submission handling
+- [x] Add booking confirmation page
+- [x] Implement success and error states
 
 #### 3.7 Authentication Pages
-- [ ] Create login page with form validation
-- [ ] Implement authentication flow
-- [ ] Add protected route handling
-- [ ] Create logout functionality
+- [x] Create login page with form validation
+- [x] Implement authentication flow
+- [x] Add protected route handling
+- [x] Create logout functionality
 
 ### 4. Integration and Testing
 

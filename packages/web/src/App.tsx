@@ -4,6 +4,9 @@ import { AuthProvider } from '@/hooks/use-auth'
 import { Layout } from '@/components/layout/layout'
 import { HomePage } from '@/pages/home'
 import { DemoFlightsPage } from '@/pages/demo-flights'
+import { BookingPage } from '@/pages/booking'
+import { LoginPage } from '@/pages/login'
+import { RegisterPage } from '@/pages/register'
 
 function App() {
   return (
@@ -14,12 +17,9 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/demo-flights" element={<DemoFlightsPage />} />
-              <Route path="/book" element={
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-3xl font-bold">Book Flight</h1>
-                  <p className="text-muted-foreground mt-2">Booking page coming soon...</p>
-                </div>
-              } />
+              <Route path="/book" element={<BookingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/bookings" element={
                 <div className="container mx-auto px-4 py-8">
                   <h1 className="text-3xl font-bold">My Bookings</h1>
