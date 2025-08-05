@@ -42,7 +42,8 @@ router.get('/', validateRequest({ query: flightSearchSchema }), async (req, res,
       limit,
     } = req.query
 
-    // Build where conditions
+    // For round trip searches, we need to find outbound flights only
+    // The return flights will be searched separately by the frontend
     const conditions = [isNull(flights.deleted_at)]
 
     if (source) {
@@ -65,9 +66,9 @@ router.get('/', validateRequest({ query: flightSearchSchema }), async (req, res,
       )
     }
 
-    if (is_round_trip !== undefined) {
-      conditions.push(eq(flights.is_round_trip, is_round_trip))
-    }
+    // Always search for one-way flights (is_round_trip: false)
+    // Round trip is handled by combining two one-way flights
+    conditions.push(eq(flights.is_round_trip, false))
 
     // Build order by clause
     const orderColumn = flights[sort_by as keyof typeof flights]

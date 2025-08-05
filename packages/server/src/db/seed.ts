@@ -34,8 +34,8 @@ const generateFlightsForYear = () => {
           const source = cities[i]
           const destination = cities[j]
 
-          // Create 1-2 flights per route per day (to keep data manageable)
-          const numFlights = Math.floor(Math.random() * 2) + 1 // 1 or 2 flights
+          // Create 2-3 flights per route per day for better round trip options
+          const numFlights = Math.floor(Math.random() * 2) + 2 // 2 or 3 flights
 
           for (let flightNum = 0; flightNum < numFlights; flightNum++) {
             const airlineIndex = Math.floor(Math.random() * airlines.length)

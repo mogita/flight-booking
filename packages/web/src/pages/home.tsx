@@ -12,18 +12,20 @@ import { Search, Calendar, MapPin } from 'lucide-react'
 export function HomePage() {
   const navigate = useNavigate()
   const [searchResults, setSearchResults] = useState<FlightSearchResponse | null>(null)
+  const [returnSearchResults, setReturnSearchResults] = useState<FlightSearchResponse | null>(null)
+  const [isRoundTripSearch, setIsRoundTripSearch] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const { execute: searchFlights, isLoading, error } = useAsyncOperation<FlightSearchResponse, any>()
 
   const handleSearch = async (formData: FlightSearchFormData) => {
     try {
-      // Convert form data to API parameters
-      const searchParams = {
+      setIsRoundTripSearch(formData.isRoundTrip)
+
+      // Search for outbound flights
+      const outboundParams = {
         source: formData.source,
         destination: formData.destination,
         departure_date: formData.departureDate.toISOString().split('T')[0],
-        return_date: formData.returnDate?.toISOString().split('T')[0],
-        is_round_trip: formData.isRoundTrip,
         page: 1,
         limit: 10,
         sort_by: 'price' as const,
@@ -31,9 +33,27 @@ export function HomePage() {
       }
 
       try {
-        const results = await searchFlights(api.flights.search, searchParams)
-        setSearchResults(results)
+        const outboundResults = await searchFlights(api.flights.search, outboundParams)
+        setSearchResults(outboundResults)
         setCurrentPage(1)
+
+        // If round trip, also search for return flights
+        if (formData.isRoundTrip && formData.returnDate) {
+          const returnParams = {
+            source: formData.destination, // Swap source and destination
+            destination: formData.source,
+            departure_date: formData.returnDate.toISOString().split('T')[0],
+            page: 1,
+            limit: 10,
+            sort_by: 'price' as const,
+            sort_order: 'asc' as const,
+          }
+
+          const returnResults = await searchFlights(api.flights.search, returnParams)
+          setReturnSearchResults(returnResults)
+        } else {
+          setReturnSearchResults(null)
+        }
       } catch (apiError) {
         // Fallback to mock data for demonstration
         console.log('API not available, using mock data for demonstration')
@@ -44,6 +64,7 @@ export function HomePage() {
           10
         )
         setSearchResults(mockResults)
+        setReturnSearchResults(null)
         setCurrentPage(1)
       }
     } catch (error) {
@@ -98,14 +119,37 @@ export function HomePage() {
 
       {/* Search Results */}
       {(searchResults || isLoading || error) && (
-        <FlightSearchResults
-          results={searchResults}
-          isLoading={isLoading}
-          error={error}
-          onBookFlight={handleBookFlight}
-          onPageChange={handlePageChange}
-          onSortChange={handleSortChange}
-        />
+        <div className="space-y-8">
+          {/* Outbound Flights */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4">
+              {isRoundTripSearch ? 'Outbound Flights' : 'Flight Results'}
+            </h2>
+            <FlightSearchResults
+              results={searchResults}
+              isLoading={isLoading}
+              error={error}
+              onBookFlight={handleBookFlight}
+              onPageChange={handlePageChange}
+              onSortChange={handleSortChange}
+            />
+          </div>
+
+          {/* Return Flights (Round Trip Only) */}
+          {isRoundTripSearch && returnSearchResults && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Return Flights</h2>
+              <FlightSearchResults
+                results={returnSearchResults}
+                isLoading={false}
+                error={null}
+                onBookFlight={handleBookFlight}
+                onPageChange={() => {}} // Disable pagination for return flights for now
+                onSortChange={() => {}} // Disable sorting for return flights for now
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Features Section */}
