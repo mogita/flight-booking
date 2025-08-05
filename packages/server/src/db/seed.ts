@@ -12,84 +12,93 @@ const generateFlightsForYear = () => {
     flightDate.setDate(today.getDate() + dayOffset)
     const dateStr = flightDate.toISOString().split('T')[0]
 
-    // Create multiple flights for each day on popular routes
-    const dailyFlights = [
-      // Tokyo (NRT) → Osaka (KIX) - 3 flights per day
-      {
-        airline: 'Japan Airlines',
-        flight_number: `JL${123 + (dayOffset % 100)}`,
-        departure_time: new Date(`${dateStr}T08:00:00Z`),
-        arrival_time: new Date(`${dateStr}T09:30:00Z`),
-        price: (45000 + Math.floor(Math.random() * 10000)).toString(),
-        source: 'Tokyo (NRT)',
-        destination: 'Osaka (KIX)',
-        departure_date: flightDate,
-        arrival_date: flightDate,
-        is_round_trip: false,
-      },
-      {
-        airline: 'ANA',
-        flight_number: `NH${456 + (dayOffset % 100)}`,
-        departure_time: new Date(`${dateStr}T14:00:00Z`),
-        arrival_time: new Date(`${dateStr}T15:30:00Z`),
-        price: (52000 + Math.floor(Math.random() * 8000)).toString(),
-        source: 'Tokyo (NRT)',
-        destination: 'Osaka (KIX)',
-        departure_date: flightDate,
-        arrival_date: flightDate,
-        is_round_trip: false,
-      },
-      {
-        airline: 'Skymark Airlines',
-        flight_number: `BC${789 + (dayOffset % 100)}`,
-        departure_time: new Date(`${dateStr}T10:30:00Z`),
-        arrival_time: new Date(`${dateStr}T12:00:00Z`),
-        price: (38000 + Math.floor(Math.random() * 5000)).toString(),
-        source: 'Tokyo (NRT)',
-        destination: 'Osaka (KIX)',
-        departure_date: flightDate,
-        arrival_date: flightDate,
-        is_round_trip: false,
-      },
-
-      // Tokyo (NRT) → Sapporo (CTS) - 3 flights per day
-      {
-        airline: 'Japan Airlines',
-        flight_number: `JL${501 + (dayOffset % 100)}`,
-        departure_time: new Date(`${dateStr}T09:00:00Z`),
-        arrival_time: new Date(`${dateStr}T10:45:00Z`),
-        price: (42000 + Math.floor(Math.random() * 8000)).toString(),
-        source: 'Tokyo (NRT)',
-        destination: 'Sapporo (CTS)',
-        departure_date: flightDate,
-        arrival_date: flightDate,
-        is_round_trip: false,
-      },
-      {
-        airline: 'ANA',
-        flight_number: `NH${571 + (dayOffset % 100)}`,
-        departure_time: new Date(`${dateStr}T15:30:00Z`),
-        arrival_time: new Date(`${dateStr}T17:15:00Z`),
-        price: (48000 + Math.floor(Math.random() * 7000)).toString(),
-        source: 'Tokyo (NRT)',
-        destination: 'Sapporo (CTS)',
-        departure_date: flightDate,
-        arrival_date: flightDate,
-        is_round_trip: false,
-      },
-      {
-        airline: 'Air Do',
-        flight_number: `HD${61 + (dayOffset % 100)}`,
-        departure_time: new Date(`${dateStr}T12:15:00Z`),
-        arrival_time: new Date(`${dateStr}T14:00:00Z`),
-        price: (35000 + Math.floor(Math.random() * 6000)).toString(),
-        source: 'Tokyo (NRT)',
-        destination: 'Sapporo (CTS)',
-        departure_date: flightDate,
-        arrival_date: flightDate,
-        is_round_trip: false,
-      },
+    // Create comprehensive route network - every city to every other city
+    const cities = [
+      { code: 'Tokyo (NRT)', name: 'Tokyo' },
+      { code: 'Osaka (KIX)', name: 'Osaka' },
+      { code: 'Fukuoka (FUK)', name: 'Fukuoka' },
+      { code: 'Sapporo (CTS)', name: 'Sapporo' },
+      { code: 'Okinawa (OKA)', name: 'Okinawa' }
     ]
+
+    const airlines = ['Japan Airlines', 'ANA', 'Skymark Airlines', 'Peach Aviation', 'Jetstar Japan', 'Air Do']
+    const flightPrefixes = ['JL', 'NH', 'BC', 'MM', 'GK', 'HD']
+
+    const dailyFlights = []
+    let flightCounter = 100
+
+    // Generate flights between every city pair
+    for (let i = 0; i < cities.length; i++) {
+      for (let j = 0; j < cities.length; j++) {
+        if (i !== j) { // Don't create flights from a city to itself
+          const source = cities[i]
+          const destination = cities[j]
+
+          // Create 1-2 flights per route per day (to keep data manageable)
+          const numFlights = Math.floor(Math.random() * 2) + 1 // 1 or 2 flights
+
+          for (let flightNum = 0; flightNum < numFlights; flightNum++) {
+            const airlineIndex = Math.floor(Math.random() * airlines.length)
+            const airline = airlines[airlineIndex]
+            const prefix = flightPrefixes[airlineIndex]
+
+            // Calculate flight duration based on distance (rough estimates)
+            const getFlightDuration = (src, dest) => {
+              const durations = {
+                'Tokyo-Osaka': 90, 'Tokyo-Fukuoka': 135, 'Tokyo-Sapporo': 105, 'Tokyo-Okinawa': 165,
+                'Osaka-Tokyo': 90, 'Osaka-Fukuoka': 75, 'Osaka-Sapporo': 120, 'Osaka-Okinawa': 120,
+                'Fukuoka-Tokyo': 135, 'Fukuoka-Osaka': 75, 'Fukuoka-Sapporo': 150, 'Fukuoka-Okinawa': 90,
+                'Sapporo-Tokyo': 105, 'Sapporo-Osaka': 120, 'Sapporo-Fukuoka': 150, 'Sapporo-Okinawa': 180,
+                'Okinawa-Tokyo': 165, 'Okinawa-Osaka': 120, 'Okinawa-Fukuoka': 90, 'Okinawa-Sapporo': 180
+              }
+              const key = `${src.name}-${dest.name}`
+              return durations[key] || 120 // default 2 hours
+            }
+
+            // Generate departure time (spread throughout the day)
+            const baseHour = 6 + (flightNum * 4) + Math.floor(Math.random() * 3) // 6-18 hours
+            const minutes = Math.floor(Math.random() * 60)
+            const departureTime = new Date(`${dateStr}T${baseHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`)
+
+            const duration = getFlightDuration(source, destination)
+            const arrivalTime = new Date(departureTime.getTime() + duration * 60000) // duration in minutes
+
+            // Calculate base price based on distance and add variation
+            const getBasePrice = (src, dest) => {
+              const prices = {
+                'Tokyo-Osaka': 45000, 'Tokyo-Fukuoka': 55000, 'Tokyo-Sapporo': 42000, 'Tokyo-Okinawa': 65000,
+                'Osaka-Tokyo': 45000, 'Osaka-Fukuoka': 35000, 'Osaka-Sapporo': 48000, 'Osaka-Okinawa': 52000,
+                'Fukuoka-Tokyo': 55000, 'Fukuoka-Osaka': 35000, 'Fukuoka-Sapporo': 58000, 'Fukuoka-Okinawa': 38000,
+                'Sapporo-Tokyo': 42000, 'Sapporo-Osaka': 48000, 'Sapporo-Fukuoka': 58000, 'Sapporo-Okinawa': 72000,
+                'Okinawa-Tokyo': 65000, 'Okinawa-Osaka': 52000, 'Okinawa-Fukuoka': 38000, 'Okinawa-Sapporo': 72000
+              }
+              const key = `${src.name}-${dest.name}`
+              return prices[key] || 50000 // default price
+            }
+
+            const basePrice = getBasePrice(source, destination)
+            const priceVariation = Math.floor(Math.random() * 15000) - 7500 // ±7500 yen variation
+            const finalPrice = Math.max(basePrice + priceVariation, 20000) // minimum 20000 yen
+
+            dailyFlights.push({
+              airline: airline,
+              flight_number: `${prefix}${flightCounter + (dayOffset % 100)}`,
+              departure_time: departureTime,
+              arrival_time: arrivalTime,
+              price: finalPrice.toString(),
+              source: source.code,
+              destination: destination.code,
+              departure_date: flightDate,
+              arrival_date: arrivalTime.getDate() !== departureTime.getDate() ?
+                new Date(arrivalTime.getFullYear(), arrivalTime.getMonth(), arrivalTime.getDate()) : flightDate,
+              is_round_trip: false,
+            })
+
+            flightCounter++
+          }
+        }
+      }
+    }
 
     flights.push(...dailyFlights)
   }
@@ -101,7 +110,7 @@ const generateFlightsForYear = () => {
 const sampleFlights = generateFlightsForYear()
 
 async function seedDatabase() {
-  console.log('Seeding database with sample flights...')
+  console.log('Seeding database with comprehensive flight network...')
 
   try {
     // Clear existing bookings first (due to foreign key constraint)
@@ -112,11 +121,18 @@ async function seedDatabase() {
     await db.delete(flights)
     console.log('Cleared existing flights')
 
-    // Insert sample flights
-    await db.insert(flights).values(sampleFlights)
-    console.log(`Inserted ${sampleFlights.length} sample flights`)
+    // Insert flights in batches to avoid memory issues
+    const batchSize = 1000
+    const totalFlights = sampleFlights.length
+    console.log(`Inserting ${totalFlights} flights in batches of ${batchSize}...`)
 
-    console.log('Database seeding completed successfully!')
+    for (let i = 0; i < totalFlights; i += batchSize) {
+      const batch = sampleFlights.slice(i, i + batchSize)
+      await db.insert(flights).values(batch)
+      console.log(`Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(totalFlights / batchSize)} (${batch.length} flights)`)
+    }
+
+    console.log(`Database seeding completed successfully! Total flights: ${totalFlights}`)
   } catch (error) {
     console.error('Seeding failed:', error)
     process.exit(1)
