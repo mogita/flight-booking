@@ -2,6 +2,8 @@
 
 A full-stack flight booking application with search, sorting, and booking functionality.
 
+> ⚠️ **All flight data in this project is fake and for demo purposes only.**
+
 ## Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite (stateless, easy to deploy and scale)
