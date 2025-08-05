@@ -142,7 +142,11 @@ export function ProtectedRoute({
   useEffect(() => {
     if (!isLoading && !isAuthenticated && redirectToLogin) {
       navigate('/login', {
-        state: { returnTo: location.pathname + location.search },
+        state: {
+          returnTo: location.pathname + location.search,
+          // Preserve any flight data from the original navigation
+          ...(location.state && { originalState: location.state })
+        },
         replace: true
       })
     }

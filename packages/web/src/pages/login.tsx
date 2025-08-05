@@ -33,6 +33,8 @@ export function LoginPage() {
   const [lockoutTimeRemaining, setLockoutTimeRemaining] = useState(0)
 
   const returnTo = location.state?.returnTo || '/'
+  const flightData = location.state?.flightData
+  const originalState = location.state?.originalState
 
   const {
     register,
@@ -97,9 +99,23 @@ export function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(returnTo, { replace: true })
+      // If we have preserved state from the original navigation, restore it
+      if (originalState && returnTo.includes('/book')) {
+        navigate(returnTo, {
+          replace: true,
+          state: originalState
+        })
+      } else if (flightData && returnTo.includes('/book')) {
+        // Fallback: if we have flight data, pass it through to the booking page
+        navigate(returnTo, {
+          replace: true,
+          state: { flight: flightData }
+        })
+      } else {
+        navigate(returnTo, { replace: true })
+      }
     }
-  }, [isAuthenticated, navigate, returnTo])
+  }, [isAuthenticated, navigate, returnTo, flightData, originalState])
 
   // Security: Input sanitization
   const sanitizeInput = (value: string): string => {

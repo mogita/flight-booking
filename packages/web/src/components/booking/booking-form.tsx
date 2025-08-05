@@ -159,7 +159,12 @@ export function BookingForm({
 
   const onSubmitDetails = async () => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { returnTo: `/book?flight=${primaryFlight.id}` } })
+      navigate('/login', {
+        state: {
+          returnTo: `/book?flight=${primaryFlight.id}`,
+          flightData: primaryFlight // Also pass flight data as backup
+        }
+      })
       return
     }
 
