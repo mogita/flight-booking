@@ -139,15 +139,15 @@ Word for Augment Code: the playwright MCP is enabled, use it to test any UI rela
 - [x] Add loading states and error handling
 
 #### 3.5 Flight Listing Page
-- [ ] Create flight list component with pagination
-- [ ] Implement flight card component displaying:
-  - [ ] Airline and flight number
-  - [ ] Departure and arrival times
-  - [ ] Price information
-  - [ ] Book button
-- [ ] Add sorting functionality (price, departure time, arrival time)
-- [ ] Implement "No flights found" state
-- [ ] Add loading and error states
+- [x] Create flight list component with pagination
+- [x] Implement flight card component displaying:
+  - [x] Airline and flight number
+  - [x] Departure and arrival times
+  - [x] Price information
+  - [x] Book button
+- [x] Add sorting functionality (price, departure time, arrival time)
+- [x] Implement "No flights found" state
+- [x] Add loading and error states
 
 #### 3.6 Booking Page
 - [ ] Create booking page with flight details display

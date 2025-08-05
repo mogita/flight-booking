@@ -3,6 +3,7 @@ import { ThemeProvider } from '@/hooks/use-theme'
 import { AuthProvider } from '@/hooks/use-auth'
 import { Layout } from '@/components/layout/layout'
 import { HomePage } from '@/pages/home'
+import { DemoFlightsPage } from '@/pages/demo-flights'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/demo-flights" element={<DemoFlightsPage />} />
               <Route path="/book" element={
                 <div className="container mx-auto px-4 py-8">
                   <h1 className="text-3xl font-bold">Book Flight</h1>

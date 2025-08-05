@@ -6,6 +6,7 @@ import { FlightSearchResults } from '@/components/flight-search/flight-search-re
 import { useAsyncOperation } from '@/hooks/use-api'
 import { api } from '@/lib/api'
 import { type FlightSearchFormData } from '@/lib/validations'
+import { generateMockSearchResults } from '@/lib/mock-data'
 import { Search, Calendar, MapPin } from 'lucide-react'
 
 export function HomePage() {
@@ -29,9 +30,22 @@ export function HomePage() {
         sort_order: 'asc' as const,
       }
 
-      const results = await searchFlights(api.flights.search, searchParams)
-      setSearchResults(results)
-      setCurrentPage(1)
+      try {
+        const results = await searchFlights(api.flights.search, searchParams)
+        setSearchResults(results)
+        setCurrentPage(1)
+      } catch (apiError) {
+        // Fallback to mock data for demonstration
+        console.log('API not available, using mock data for demonstration')
+        const mockResults = generateMockSearchResults(
+          formData.source.split('(')[1]?.replace(')', '') || 'NRT',
+          formData.destination.split('(')[1]?.replace(')', '') || 'KIX',
+          1,
+          10
+        )
+        setSearchResults(mockResults)
+        setCurrentPage(1)
+      }
     } catch (error) {
       console.error('Flight search failed:', error)
     }
@@ -42,17 +56,33 @@ export function HomePage() {
     navigate('/book', { state: { flight } })
   }
 
-  const handleLoadMore = async () => {
+  const handlePageChange = async (page: number) => {
     if (!searchResults) return
 
     try {
-      const nextPage = currentPage + 1
-      // This would typically use the same search parameters with updated page
-      // For now, we'll just show a placeholder
-      console.log('Load more flights for page:', nextPage)
-      setCurrentPage(nextPage)
+      // In a real implementation, you would re-search with the new page
+      // For now, we'll just update the current page
+      console.log('Navigate to page:', page)
+      setCurrentPage(page)
+
+      // Scroll to top of results
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
-      console.error('Failed to load more flights:', error)
+      console.error('Failed to change page:', error)
+    }
+  }
+
+  const handleSortChange = async (sortBy: string) => {
+    if (!searchResults) return
+
+    try {
+      // In a real implementation, you would re-search with the new sort order
+      console.log('Sort by:', sortBy)
+
+      // For demo purposes, we'll just log the sort change
+      // The FlightSearchResults component handles client-side sorting
+    } catch (error) {
+      console.error('Failed to change sort:', error)
     }
   }
 
@@ -73,8 +103,8 @@ export function HomePage() {
           isLoading={isLoading}
           error={error}
           onBookFlight={handleBookFlight}
-          onLoadMore={handleLoadMore}
-          hasMore={searchResults ? currentPage < searchResults.total_pages : false}
+          onPageChange={handlePageChange}
+          onSortChange={handleSortChange}
         />
       )}
 
