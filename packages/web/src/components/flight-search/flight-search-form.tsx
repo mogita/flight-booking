@@ -3,11 +3,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Search, MapPin, Calendar, ArrowLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormError } from '@/components/ui/error'
+import { CitySelector } from '@/components/ui/city-selector'
 import { flightSearchSchema, type FlightSearchFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
 
@@ -76,9 +76,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
     setValue('destination', source)
   }
 
-  const handleQuickSelect = (location: string, field: 'source' | 'destination') => {
-    setValue(field, location)
-  }
+
 
   const handleReset = () => {
     reset()
@@ -132,30 +130,16 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
                 <MapPin className="h-4 w-4" />
                 From
               </Label>
-              <Input
-                id="source"
+              <CitySelector
+                value={watch('source')}
+                onChange={(value) => setValue('source', value)}
                 placeholder="Departure city"
-                {...register('source')}
-                className={errors.source ? 'border-destructive' : ''}
+                cities={POPULAR_DESTINATIONS}
+                error={!!errors.source}
               />
               {errors.source && (
                 <p className="text-sm text-destructive">{errors.source.message}</p>
               )}
-              {/* Quick Select From Destinations */}
-              <div className="flex flex-wrap gap-1 mt-2">
-                {POPULAR_DESTINATIONS.map((dest) => (
-                  <Button
-                    key={`from-${dest.code}`}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickSelect(dest.name, 'source')}
-                    className="text-xs h-7"
-                  >
-                    {dest.city}
-                  </Button>
-                ))}
-              </div>
             </div>
 
             {/* Swap Button */}
@@ -178,30 +162,16 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
                 <MapPin className="h-4 w-4" />
                 To
               </Label>
-              <Input
-                id="destination"
+              <CitySelector
+                value={watch('destination')}
+                onChange={(value) => setValue('destination', value)}
                 placeholder="Destination city"
-                {...register('destination')}
-                className={errors.destination ? 'border-destructive' : ''}
+                cities={POPULAR_DESTINATIONS}
+                error={!!errors.destination}
               />
               {errors.destination && (
                 <p className="text-sm text-destructive">{errors.destination.message}</p>
               )}
-              {/* Quick Select To Destinations */}
-              <div className="flex flex-wrap gap-1 mt-2">
-                {POPULAR_DESTINATIONS.map((dest) => (
-                  <Button
-                    key={`to-${dest.code}`}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickSelect(dest.name, 'destination')}
-                    className="text-xs h-7"
-                  >
-                    {dest.city}
-                  </Button>
-                ))}
-              </div>
             </div>
 
             {/* Departure Date */}
