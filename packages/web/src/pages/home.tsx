@@ -8,7 +8,7 @@ import { useRoundTripBooking } from '@/hooks/use-round-trip-booking'
 import { api } from '@/lib/api'
 import { type FlightSearchFormData } from '@/lib/validations'
 import { generateMockSearchResults } from '@/lib/mock-data'
-import { Search, Calendar, MapPin } from 'lucide-react'
+
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -197,38 +197,7 @@ export function HomePage() {
         </div>
       )}
 
-      {/* Features Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <div className="text-center">
-          <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <Search className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Easy Search</h3>
-          <p className="text-muted-foreground">
-            Find flights quickly with our intuitive search interface. Filter by price, time, and airline.
-          </p>
-        </div>
-        
-        <div className="text-center">
-          <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <Calendar className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Flexible Dates</h3>
-          <p className="text-muted-foreground">
-            Choose from available dates and find the best prices for your travel schedule.
-          </p>
-        </div>
-        
-        <div className="text-center">
-          <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <MapPin className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Multiple Destinations</h3>
-          <p className="text-muted-foreground">
-            Book flights to various destinations across Japan and beyond with trusted airlines.
-          </p>
-        </div>
-      </div>
+
     </div>
   )
 }
