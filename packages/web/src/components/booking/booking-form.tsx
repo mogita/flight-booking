@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormError, InlineError } from '@/components/ui/error'
 import { LoadingSpinner } from '@/components/ui/loading'
-import { bookingSchema, type BookingFormData } from '@/lib/validations'
+import { fullBookingSchema, type BookingFormData } from '@/lib/validations'
 import { useAuth } from '@/hooks/use-auth'
 import { useAsyncOperation } from '@/hooks/use-api'
 import { api } from '@/lib/api'
@@ -52,13 +52,18 @@ export function BookingForm({ flight, className }: BookingFormProps) {
     cvv: string
     cardholderName: string
   }>({
-    resolver: zodResolver(bookingSchema),
-    mode: 'onSubmit', // Only validate on submit, not on change
+    resolver: zodResolver(fullBookingSchema),
+    mode: 'onChange', // Validate on change for real-time feedback
     defaultValues: {
       flightId: flight.id,
       fullname: user?.username || '',
       email: '',
       phone: '',
+      // Demo payment values that pass validation
+      cardNumber: '4532 1234 5678 9012',
+      expiryDate: '12/28',
+      cvv: '123',
+      cardholderName: 'John Doe',
     },
   })
 
@@ -86,6 +91,17 @@ export function BookingForm({ flight, className }: BookingFormProps) {
     return value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim()
   }
 
+  const formatExpiryDate = (value: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '')
+
+    // Format as MM/YY
+    if (digits.length >= 2) {
+      return digits.substring(0, 2) + (digits.length > 2 ? '/' + digits.substring(2, 4) : '')
+    }
+    return digits
+  }
+
   const onSubmitDetails = async (data: any) => {
     if (!isAuthenticated) {
       navigate('/login', { state: { returnTo: `/book?flight=${flight.id}` } })
@@ -100,8 +116,12 @@ export function BookingForm({ flight, className }: BookingFormProps) {
   }
 
   const onSubmitPayment = async (data: any) => {
+    // Validate payment fields before proceeding
+    const isValid = await trigger(['cardNumber', 'expiryDate', 'cvv', 'cardholderName'])
+    if (!isValid) return
+
     setIsProcessing(true)
-    
+
     try {
       // Security: Only send necessary booking data to server
       // Payment details are handled client-side for demo
@@ -117,14 +137,14 @@ export function BookingForm({ flight, className }: BookingFormProps) {
 
       // Create booking after successful payment simulation
       const booking = await createBooking(api.bookings.create, bookingData)
-      
+
       setPaymentStep('confirmation')
-      
+
       // Redirect to bookings page after confirmation
       setTimeout(() => {
         navigate('/bookings')
       }, 3000)
-      
+
     } catch (error) {
       console.error('Booking failed:', error)
     } finally {
@@ -300,7 +320,11 @@ export function BookingForm({ flight, className }: BookingFormProps) {
                       setValue('cardNumber', formatted)
                     }}
                     maxLength={19}
+                    className={errors.cardNumber ? 'border-destructive' : ''}
                   />
+                  {errors.cardNumber && (
+                    <InlineError message={errors.cardNumber.message || 'Invalid card number'} />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -312,7 +336,15 @@ export function BookingForm({ flight, className }: BookingFormProps) {
                       {...register('expiryDate')}
                       placeholder="MM/YY"
                       maxLength={5}
+                      className={errors.expiryDate ? 'border-destructive' : ''}
+                      onChange={(e) => {
+                        const formatted = formatExpiryDate(e.target.value)
+                        setValue('expiryDate', formatted)
+                      }}
                     />
+                    {errors.expiryDate && (
+                      <InlineError message={errors.expiryDate.message || 'Invalid expiry date'} />
+                    )}
                   </div>
 
                   {/* CVV */}
@@ -324,7 +356,11 @@ export function BookingForm({ flight, className }: BookingFormProps) {
                       placeholder="123"
                       maxLength={4}
                       type="password"
+                      className={errors.cvv ? 'border-destructive' : ''}
                     />
+                    {errors.cvv && (
+                      <InlineError message={errors.cvv.message || 'Invalid CVV'} />
+                    )}
                   </div>
                 </div>
 
@@ -335,7 +371,11 @@ export function BookingForm({ flight, className }: BookingFormProps) {
                     id="cardholderName"
                     {...register('cardholderName')}
                     placeholder="Name as it appears on card"
+                    className={errors.cardholderName ? 'border-destructive' : ''}
                   />
+                  {errors.cardholderName && (
+                    <InlineError message={errors.cardholderName.message || 'Invalid cardholder name'} />
+                  )}
                 </div>
               </div>
             )}

@@ -42,6 +42,26 @@ export const bookingSchema = z.object({
     }),
 })
 
+// Payment validation schema
+export const paymentSchema = z.object({
+  cardNumber: z.string()
+    .min(1, 'Card number is required')
+    .regex(/^[\d\s]{13,19}$/, 'Please enter a valid card number'),
+  expiryDate: z.string()
+    .min(1, 'Expiry date is required')
+    .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, 'Please enter a valid expiry date (MM/YY)'),
+  cvv: z.string()
+    .min(1, 'CVV is required')
+    .regex(/^[0-9]{3,4}$/, 'Please enter a valid CVV'),
+  cardholderName: z.string()
+    .min(2, 'Cardholder name must be at least 2 characters')
+    .max(100, 'Cardholder name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s\-'\.]+$/, 'Cardholder name can only contain letters, spaces, hyphens, apostrophes, and periods'),
+})
+
+// Combined booking and payment schema
+export const fullBookingSchema = bookingSchema.merge(paymentSchema)
+
 // Login validation schema
 export const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
