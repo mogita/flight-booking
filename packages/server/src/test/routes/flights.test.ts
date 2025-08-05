@@ -47,7 +47,7 @@ describe('Flight Routes', () => {
         data: {
           pagination: {
             page: 1,
-            limit: 10,
+            limit: 5,
           },
         },
       })
@@ -71,12 +71,12 @@ describe('Flight Routes', () => {
 
     it('should sort flights by price', async () => {
       const response = await request(app)
-        .get('/api/flights?sort_by=price&sort_order=asc')
+        .get('/api/flights?sort_by=price_asc')
         .expect(200)
 
       expect(response.body.success).toBe(true)
       const flights = response.body.data.flights
-      
+
       if (flights.length > 1) {
         for (let i = 1; i < flights.length; i++) {
           expect(parseFloat(flights[i].price)).toBeGreaterThanOrEqual(parseFloat(flights[i-1].price))
