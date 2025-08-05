@@ -73,7 +73,13 @@ export function FlightSearchResults({
     return null
   }
 
-  const { flights, total, page, total_pages } = results
+  const { flights = [] } = results
+  const {
+    total = 0,
+    page = 1,
+    totalPages: total_pages = 1,
+    limit = 10
+  } = results.pagination || {}
 
   if (flights.length === 0) {
     return (
@@ -118,7 +124,7 @@ export function FlightSearchResults({
         <div>
           <h2 className="text-2xl font-bold">Flight Results</h2>
           <p className="text-muted-foreground">
-            {total} flights found • Page {page} of {total_pages}
+            {total || 0} flights found{total_pages > 1 ? ` • Page ${page || 1} of ${total_pages}` : ''}
           </p>
         </div>
         
@@ -140,10 +146,10 @@ export function FlightSearchResults({
 
       {/* Pagination Info */}
       <PaginationInfo
-        currentPage={page}
-        totalPages={total_pages}
-        totalItems={total}
-        itemsPerPage={results.limit}
+        currentPage={page || 1}
+        totalPages={total_pages || 1}
+        totalItems={total || 0}
+        itemsPerPage={limit || 10}
         className="text-center"
       />
 

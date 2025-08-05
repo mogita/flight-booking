@@ -165,14 +165,26 @@ export function PaginationInfo({
   itemsPerPage,
   className,
 }: PaginationInfoProps) {
-  const startItem = (currentPage - 1) * itemsPerPage + 1
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems)
+  // Ensure all values are valid numbers
+  const safePage = Math.max(1, currentPage || 1)
+  const safeTotal = Math.max(0, totalItems || 0)
+  const safeItemsPerPage = Math.max(1, itemsPerPage || 10)
+  const safeTotalPages = Math.max(1, totalPages || 1)
+
+  const startItem = safeTotal > 0 ? (safePage - 1) * safeItemsPerPage + 1 : 0
+  const endItem = safeTotal > 0 ? Math.min(safePage * safeItemsPerPage, safeTotal) : 0
 
   return (
     <div className={cn('text-sm text-muted-foreground', className)}>
-      Showing {startItem} to {endItem} of {totalItems} flights
-      {totalPages > 1 && (
-        <span className="hidden sm:inline"> • Page {currentPage} of {totalPages}</span>
+      {safeTotal > 0 ? (
+        <>
+          Showing {startItem} to {endItem} of {safeTotal} flights
+          {safeTotalPages > 1 && (
+            <span className="hidden sm:inline"> • Page {safePage} of {safeTotalPages}</span>
+          )}
+        </>
+      ) : (
+        'No flights to display'
       )}
     </div>
   )

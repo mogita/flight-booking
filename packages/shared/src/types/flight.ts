@@ -29,8 +29,10 @@ export interface FlightSearchParams {
 
 export interface FlightSearchResponse {
   flights: Flight[]
-  total: number
-  page: number
-  limit: number
-  total_pages: number
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
 }
