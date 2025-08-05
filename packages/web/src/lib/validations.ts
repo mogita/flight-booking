@@ -36,10 +36,9 @@ export const bookingSchema = z.object({
     .email('Please enter a valid email address')
     .min(1, 'Email is required'),
   phone: z.string()
+    .regex(/^\+[1-9]\d{1,14}$/, 'Please enter a valid phone number (e.g., +1234567890)')
     .optional()
-    .refine((val) => !val || /^\+?[\d\s\-\(\)]+$/.test(val), {
-      message: 'Please enter a valid phone number'
-    }),
+    .or(z.literal('')),
 })
 
 // Payment validation schema
@@ -76,8 +75,8 @@ export const validateEmail = (email: string): boolean => {
 
 export const validatePhone = (phone: string): boolean => {
   if (!phone) return true // Phone is optional
-  const phoneRegex = /^\+?[\d\s\-\(\)]+$/
-  return phoneRegex.test(phone)
+  const e164Regex = /^\+[1-9]\d{1,14}$/
+  return e164Regex.test(phone)
 }
 
 export const validateName = (name: string): boolean => {
