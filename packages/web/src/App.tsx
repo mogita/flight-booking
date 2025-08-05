@@ -4,7 +4,7 @@ import { AuthProvider } from '@/hooks/use-auth'
 import { RoundTripBookingProvider } from '@/hooks/use-round-trip-booking'
 import { Layout } from '@/components/layout/layout'
 import { HomePage } from '@/pages/home'
-import { DemoFlightsPage } from '@/pages/demo-flights'
+
 import { BookingPage } from '@/pages/booking'
 import { BookingsPage } from '@/pages/bookings'
 import { LoginPage } from '@/pages/login'
@@ -19,7 +19,7 @@ function App() {
             <Layout>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/demo-flights" element={<DemoFlightsPage />} />
+
                 <Route path="/book" element={<BookingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />

@@ -26,6 +26,8 @@ export interface FlightSearchParams {
   limit?: number
 }
 
+export const DEFAULT_PAGE_SIZE = 5
+
 export interface FlightSearchResponse {
   flights: Flight[]
   pagination: {

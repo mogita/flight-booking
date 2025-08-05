@@ -51,7 +51,7 @@ export function FlightCard({
     }).format(price)
   }
 
-  // Generate a mock rating for demonstration (in real app, this would come from API)
+  // Generate a rating based on flight number (in real app, this would come from API)
   const generateRating = (flightNumber: string) => {
     const hash = flightNumber.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0)

@@ -1,5 +1,5 @@
 import { db, client } from './connection'
-import { flights, bookings } from './schema'
+import { flights, bookings, roundTripBookings } from './schema'
 
 // Generate flights for a full year to ensure demo works year-round
 const generateFlightsForYear = () => {
@@ -34,8 +34,8 @@ const generateFlightsForYear = () => {
           const source = cities[i]
           const destination = cities[j]
 
-          // Create 2-3 flights per route per day for better round trip options
-          const numFlights = Math.floor(Math.random() * 2) + 2 // 2 or 3 flights
+          // Create 15-20 flights per route per day for proper pagination testing
+          const numFlights = Math.floor(Math.random() * 6) + 15 // 15 to 20 flights
 
           for (let flightNum = 0; flightNum < numFlights; flightNum++) {
             const airlineIndex = Math.floor(Math.random() * airlines.length)
@@ -56,9 +56,12 @@ const generateFlightsForYear = () => {
             }
 
             // Generate departure time (spread throughout the day)
-            const baseHour = 6 + (flightNum * 4) + Math.floor(Math.random() * 3) // 6-18 hours
+            // With 15-20 flights, spread them evenly from 6:00 to 22:00 (16 hours)
+            const timeSlot = (flightNum * 16) / numFlights // Distribute evenly across 16 hours
+            const baseHour = Math.floor(6 + timeSlot + Math.random() * 0.5) // Add small random variation
             const minutes = Math.floor(Math.random() * 60)
-            const departureTime = new Date(`${dateStr}T${baseHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`)
+            const finalHour = Math.min(Math.max(baseHour, 6), 22) // Ensure hour is between 6-22
+            const departureTime = new Date(`${dateStr}T${finalHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`)
 
             const duration = getFlightDuration(source, destination)
             const arrivalTime = new Date(departureTime.getTime() + duration * 60000) // duration in minutes
@@ -113,11 +116,7 @@ async function seedDatabase() {
   console.log('Seeding database with comprehensive flight network...')
 
   try {
-    // Clear existing bookings first (due to foreign key constraint)
-    await db.delete(bookings)
-    console.log('Cleared existing bookings')
-
-    // Clear existing flights
+    // Clear existing flights (bookings will be cleared by cascade if they exist)
     await db.delete(flights)
     console.log('Cleared existing flights')
 

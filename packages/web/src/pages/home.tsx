@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Flight, FlightSearchResponse } from '@flight-booking/shared'
+import { DEFAULT_PAGE_SIZE } from '@flight-booking/shared'
 import { FlightSearchForm } from '@/components/flight-search/flight-search-form'
 import { FlightSearchResults } from '@/components/flight-search/flight-search-results'
 import { useAsyncOperation } from '@/hooks/use-api'
 import { useRoundTripBooking } from '@/hooks/use-round-trip-booking'
 import { api } from '@/lib/api'
 import { type FlightSearchFormData } from '@/lib/validations'
-import { generateMockSearchResults } from '@/lib/mock-data'
+
 
 
 export function HomePage() {
   const navigate = useNavigate()
   const [searchResults, setSearchResults] = useState<FlightSearchResponse | null>(null)
   const [returnSearchResults, setReturnSearchResults] = useState<FlightSearchResponse | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [outboundPage, setOutboundPage] = useState(1)
+  const [returnPage, setReturnPage] = useState(1)
   const [currentSort, setCurrentSort] = useState<'price_asc' | 'price_desc' | 'departure_asc' | 'departure_desc' | 'duration_asc'>('price_asc')
   const [lastSearchParams, setLastSearchParams] = useState<any>(null)
   const { execute: searchFlights, isLoading, error } = useAsyncOperation<FlightSearchResponse, any>()
@@ -38,13 +40,17 @@ export function HomePage() {
       setIsRoundTrip(formData.isRoundTrip)
       resetBooking()
 
+      // Extract airport codes from city names (e.g., "Tokyo (NRT)" -> "NRT")
+      const sourceCode = formData.source.split('(')[1]?.replace(')', '') || formData.source
+      const destinationCode = formData.destination.split('(')[1]?.replace(')', '') || formData.destination
+
       // Search for outbound flights
       const outboundParams = {
-        source: formData.source,
-        destination: formData.destination,
+        source: sourceCode,
+        destination: destinationCode,
         departure_date: formData.departureDate.toISOString().split('T')[0],
         page: 1,
-        limit: 10,
+        limit: DEFAULT_PAGE_SIZE,
         sort_by: currentSort,
       }
 
@@ -55,41 +61,36 @@ export function HomePage() {
         const outboundResults = await searchFlights(api.flights.search, outboundParams)
         setSearchResults(outboundResults)
         setOutboundFlights(outboundResults?.flights || [])
-        setCurrentPage(1)
+        setOutboundPage(1)
 
         // If round trip, also search for return flights
         if (formData.isRoundTrip && formData.returnDate) {
           const returnParams = {
-            source: formData.destination, // Swap source and destination
-            destination: formData.source,
+            source: destinationCode, // Swap source and destination
+            destination: sourceCode,
             departure_date: formData.returnDate.toISOString().split('T')[0],
             page: 1,
-            limit: 10,
+            limit: DEFAULT_PAGE_SIZE,
             sort_by: currentSort,
           }
 
           const returnResults = await searchFlights(api.flights.search, returnParams)
           setReturnSearchResults(returnResults)
           setReturnFlights(returnResults?.flights || [])
+          setReturnPage(1)
         } else {
           setReturnSearchResults(null)
           setReturnFlights([])
         }
       } catch (apiError) {
-        // Fallback to mock data for demonstration
-        console.log('API not available, using mock data for demonstration')
-        const mockResults = generateMockSearchResults(
-          formData.source.split('(')[1]?.replace(')', '') || 'NRT',
-          formData.destination.split('(')[1]?.replace(')', '') || 'KIX',
-          1,
-          10,
-          currentSort
-        )
-        setSearchResults(mockResults)
-        setOutboundFlights(mockResults?.flights || [])
+        console.error('Flight search failed:', apiError)
+        // Reset search results on error
+        setSearchResults(null)
+        setOutboundFlights([])
         setReturnSearchResults(null)
         setReturnFlights([])
-        setCurrentPage(1)
+        setOutboundPage(1)
+        setReturnPage(1)
       }
     } catch (error) {
       console.error('Flight search failed:', error)
@@ -118,19 +119,52 @@ export function HomePage() {
     }
   }
 
-  const handlePageChange = async (page: number) => {
-    if (!searchResults) return
+  const handleOutboundPageChange = async (page: number) => {
+    if (!lastSearchParams) return
 
     try {
-      // In a real implementation, you would re-search with the new page
-      // For now, we'll just update the current page
-      console.log('Navigate to page:', page)
-      setCurrentPage(page)
+      setOutboundPage(page)
+
+      const newParams = {
+        ...lastSearchParams,
+        page,
+        sort_by: currentSort,
+      }
+
+      const outboundResults = await searchFlights(api.flights.search, newParams)
+      setSearchResults(outboundResults)
+      setOutboundFlights(outboundResults?.flights || [])
 
       // Scroll to top of results
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
-      console.error('Failed to change page:', error)
+      console.error('Failed to change outbound page:', error)
+    }
+  }
+
+  const handleReturnPageChange = async (page: number) => {
+    if (!lastSearchParams) return
+
+    try {
+      setReturnPage(page)
+
+      const returnParams = {
+        source: lastSearchParams.destination,
+        destination: lastSearchParams.source,
+        departure_date: lastSearchParams.return_date || lastSearchParams.departure_date,
+        page,
+        limit: DEFAULT_PAGE_SIZE,
+        sort_by: currentSort,
+      }
+
+      const returnResults = await searchFlights(api.flights.search, returnParams)
+      setReturnSearchResults(returnResults)
+      setReturnFlights(returnResults?.flights || [])
+
+      // Scroll to top of results
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (error) {
+      console.error('Failed to change return page:', error)
     }
   }
 
@@ -151,7 +185,7 @@ export function HomePage() {
       const outboundResults = await searchFlights(api.flights.search, newParams)
       setSearchResults(outboundResults)
       setOutboundFlights(outboundResults?.flights || [])
-      setCurrentPage(1)
+      setOutboundPage(1)
 
       // If round trip, also re-search return flights with new sort
       if (isRoundTrip && returnSearchResults) {
@@ -160,7 +194,7 @@ export function HomePage() {
           destination: lastSearchParams.source,
           departure_date: lastSearchParams.return_date || lastSearchParams.departure_date,
           page: 1,
-          limit: 10,
+          limit: DEFAULT_PAGE_SIZE,
           sort_by: sortBy,
         }
 
@@ -196,7 +230,7 @@ export function HomePage() {
               isLoading={isLoading}
               error={error}
               onBookFlight={handleBookFlight}
-              onPageChange={handlePageChange}
+              onPageChange={handleOutboundPageChange}
               onSortChange={handleSortChange}
               selectedFlight={selectedOutboundFlight}
               isRoundTrip={isRoundTrip}
@@ -214,8 +248,8 @@ export function HomePage() {
                 isLoading={false}
                 error={null}
                 onBookFlight={handleBookFlight}
-                onPageChange={() => {}} // Disable pagination for return flights for now
-                onSortChange={() => {}} // Disable sorting for return flights for now
+                onPageChange={handleReturnPageChange}
+                onSortChange={handleSortChange}
                 selectedFlight={selectedReturnFlight}
                 isRoundTrip={isRoundTrip}
                 currentStep={currentStep}

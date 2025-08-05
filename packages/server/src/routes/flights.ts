@@ -6,6 +6,7 @@ import { db } from '../db/connection'
 import { flights } from '../db/schema'
 import { ApiError } from '../middleware/error-handler'
 import { logger } from '../utils/logger'
+import { DEFAULT_PAGE_SIZE } from '@flight-booking/shared'
 
 const router = Router()
 
@@ -18,7 +19,7 @@ const flightSearchSchema = z.object({
   is_round_trip: z.string().transform(val => val === 'true').optional(),
   sort_by: z.enum(['price_asc', 'price_desc', 'departure_asc', 'departure_desc', 'duration_asc']).optional().default('price_asc'),
   page: z.string().transform(Number).optional().default('1'),
-  limit: z.string().transform(Number).optional().default('10'),
+  limit: z.string().transform(Number).optional().default(String(DEFAULT_PAGE_SIZE)),
 })
 
 // Flight ID params schema

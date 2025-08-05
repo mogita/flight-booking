@@ -5,7 +5,8 @@ async function resetDatabase() {
   console.log('Resetting database...')
   
   try {
-    // Drop tables if they exist
+    // Drop tables if they exist (in correct order due to dependencies)
+    await db.execute(sql`DROP TABLE IF EXISTS round_trip_bookings CASCADE`)
     await db.execute(sql`DROP TABLE IF EXISTS bookings CASCADE`)
     await db.execute(sql`DROP TABLE IF EXISTS flights CASCADE`)
     await db.execute(sql`DROP TABLE IF EXISTS __drizzle_migrations CASCADE`)
