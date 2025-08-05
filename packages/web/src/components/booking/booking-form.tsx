@@ -52,13 +52,8 @@ export function BookingForm({ flight, className }: BookingFormProps) {
     cvv: string
     cardholderName: string
   }>({
-    resolver: zodResolver(bookingSchema.extend({
-      // Client-side only validation for payment fields
-      cardNumber: bookingSchema.shape.fullname, // Reuse name validation
-      expiryDate: bookingSchema.shape.fullname,
-      cvv: bookingSchema.shape.fullname,
-      cardholderName: bookingSchema.shape.fullname,
-    })),
+    resolver: zodResolver(bookingSchema),
+    mode: 'onSubmit', // Only validate on submit, not on change
     defaultValues: {
       flightId: flight.id,
       fullname: user?.username || '',
@@ -97,8 +92,8 @@ export function BookingForm({ flight, className }: BookingFormProps) {
       return
     }
 
-    // Security: Validate all inputs before proceeding
-    const isValid = await trigger()
+    // Security: Validate only passenger details fields for this step
+    const isValid = await trigger(['fullname', 'email', 'phone'])
     if (!isValid) return
 
     setPaymentStep('payment')
