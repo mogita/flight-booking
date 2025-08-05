@@ -126,7 +126,7 @@ export function BookingForm({ flight, className }: BookingFormProps) {
       // Security: Only send necessary booking data to server
       // Payment details are handled client-side for demo
       const bookingData = {
-        flightId: flight.id,
+        flight_id: flight.id, // Server expects snake_case
         fullname: sanitizeInput(data.fullname, SECURITY_PATTERNS.name),
         email: sanitizeInput(data.email, SECURITY_PATTERNS.email),
         phone: data.phone ? sanitizeInput(data.phone, SECURITY_PATTERNS.phone) : undefined,
