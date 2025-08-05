@@ -12,6 +12,12 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/book" element={
+                <div className="container mx-auto px-4 py-8">
+                  <h1 className="text-3xl font-bold">Book Flight</h1>
+                  <p className="text-muted-foreground mt-2">Booking page coming soon...</p>
+                </div>
+              } />
               <Route path="/bookings" element={
                 <div className="container mx-auto px-4 py-8">
                   <h1 className="text-3xl font-bold">My Bookings</h1>

@@ -129,14 +129,14 @@ Word for Augment Code: the playwright MCP is enabled, use it to test any UI rela
 - [x] Implement authentication context and hooks
 
 #### 3.4 Flight Search Page
-- [ ] Create flight search form component
-  - [ ] Source city/airport input with validation
-  - [ ] Destination city/airport input with validation
-  - [ ] Departure date picker
-  - [ ] Round trip toggle and return date picker
-  - [ ] Form validation and error display
-- [ ] Implement search functionality with API integration
-- [ ] Add loading states and error handling
+- [x] Create flight search form component
+  - [x] Source city/airport input with validation
+  - [x] Destination city/airport input with validation
+  - [x] Departure date picker
+  - [x] Round trip toggle and return date picker
+  - [x] Form validation and error display
+- [x] Implement search functionality with API integration
+- [x] Add loading states and error handling
 
 #### 3.5 Flight Listing Page
 - [ ] Create flight list component with pagination

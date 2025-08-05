@@ -1,57 +1,82 @@
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import type { Flight, FlightSearchResponse } from '@flight-booking/shared'
+import { FlightSearchForm } from '@/components/flight-search/flight-search-form'
+import { FlightSearchResults } from '@/components/flight-search/flight-search-results'
+import { useAsyncOperation } from '@/hooks/use-api'
+import { api } from '@/lib/api'
+import { type FlightSearchFormData } from '@/lib/validations'
 import { Search, Calendar, MapPin } from 'lucide-react'
 
 export function HomePage() {
+  const navigate = useNavigate()
+  const [searchResults, setSearchResults] = useState<FlightSearchResponse | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const { execute: searchFlights, isLoading, error } = useAsyncOperation<FlightSearchResponse, any>()
+
+  const handleSearch = async (formData: FlightSearchFormData) => {
+    try {
+      // Convert form data to API parameters
+      const searchParams = {
+        source: formData.source,
+        destination: formData.destination,
+        departure_date: formData.departureDate.toISOString().split('T')[0],
+        return_date: formData.returnDate?.toISOString().split('T')[0],
+        is_round_trip: formData.isRoundTrip,
+        page: 1,
+        limit: 10,
+        sort_by: 'price' as const,
+        sort_order: 'asc' as const,
+      }
+
+      const results = await searchFlights(api.flights.search, searchParams)
+      setSearchResults(results)
+      setCurrentPage(1)
+    } catch (error) {
+      console.error('Flight search failed:', error)
+    }
+  }
+
+  const handleBookFlight = (flight: Flight) => {
+    // Navigate to booking page with flight data
+    navigate('/book', { state: { flight } })
+  }
+
+  const handleLoadMore = async () => {
+    if (!searchResults) return
+
+    try {
+      const nextPage = currentPage + 1
+      // This would typically use the same search parameters with updated page
+      // For now, we'll just show a placeholder
+      console.log('Load more flights for page:', nextPage)
+      setCurrentPage(nextPage)
+    } catch (error) {
+      console.error('Failed to load more flights:', error)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Search Form Placeholder */}
-      <div className="max-w-4xl mx-auto mb-12">
-        <div className="bg-card border rounded-lg p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-            <Search className="h-6 w-6" />
-            Search Flights
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                From
-              </label>
-              <div className="h-10 bg-muted rounded-md flex items-center px-3 text-muted-foreground">
-                Select departure city
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                To
-              </label>
-              <div className="h-10 bg-muted rounded-md flex items-center px-3 text-muted-foreground">
-                Select destination city
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Departure Date
-              </label>
-              <div className="h-10 bg-muted rounded-md flex items-center px-3 text-muted-foreground">
-                Select date
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-center">
-            <Button size="lg" className="px-8">
-              <Search className="h-4 w-4 mr-2" />
-              Search Flights
-            </Button>
-          </div>
-        </div>
+      {/* Search Form */}
+      <div className="mb-8">
+        <FlightSearchForm
+          onSearch={handleSearch}
+          isLoading={isLoading}
+        />
       </div>
+
+      {/* Search Results */}
+      {(searchResults || isLoading || error) && (
+        <FlightSearchResults
+          results={searchResults}
+          isLoading={isLoading}
+          error={error}
+          onBookFlight={handleBookFlight}
+          onLoadMore={handleLoadMore}
+          hasMore={searchResults ? currentPage < searchResults.total_pages : false}
+        />
+      )}
 
       {/* Features Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
