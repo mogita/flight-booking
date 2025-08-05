@@ -345,10 +345,13 @@ export function BookingForm({ flight, className }: BookingFormProps) {
               </div>
             )}
 
-            {/* Form Errors */}
-            {Object.keys(errors).length > 0 && (
-              <FormError 
-                errors={Object.values(errors).map(error => error?.message || 'Invalid input')} 
+            {/* Form Errors - exclude field-specific errors that are already shown next to fields */}
+            {Object.keys(errors).filter(key => !['fullname', 'email', 'phone', 'cardNumber', 'expiryDate', 'cvv', 'cardholderName'].includes(key)).length > 0 && (
+              <FormError
+                errors={Object.entries(errors)
+                  .filter(([key]) => !['fullname', 'email', 'phone', 'cardNumber', 'expiryDate', 'cvv', 'cardholderName'].includes(key))
+                  .map(([, error]) => error?.message || 'Invalid input')
+                }
               />
             )}
 

@@ -118,7 +118,6 @@ export function LoginPage() {
     if (isLocked) return
 
     try {
-      // Security: Additional client-side validation
       if (!data.username || !data.password) {
         return
       }
@@ -136,6 +135,7 @@ export function LoginPage() {
       
     } catch (error) {
       // Security: Track failed attempts
+      // For the demo purpose only. For production, use server-side tracking
       const now = Date.now()
       const newAttempts: LoginAttempt = {
         count: loginAttempts.count + 1,
