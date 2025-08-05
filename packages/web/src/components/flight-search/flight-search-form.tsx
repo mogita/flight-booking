@@ -141,6 +141,21 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
               {errors.source && (
                 <p className="text-sm text-destructive">{errors.source.message}</p>
               )}
+              {/* Quick Select From Destinations */}
+              <div className="flex flex-wrap gap-1 mt-2">
+                {POPULAR_DESTINATIONS.map((dest) => (
+                  <Button
+                    key={`from-${dest.code}`}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickSelect(dest.name, 'source')}
+                    className="text-xs h-7"
+                  >
+                    {dest.city}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             {/* Swap Button */}
@@ -172,6 +187,21 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
               {errors.destination && (
                 <p className="text-sm text-destructive">{errors.destination.message}</p>
               )}
+              {/* Quick Select To Destinations */}
+              <div className="flex flex-wrap gap-1 mt-2">
+                {POPULAR_DESTINATIONS.map((dest) => (
+                  <Button
+                    key={`to-${dest.code}`}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickSelect(dest.name, 'destination')}
+                    className="text-xs h-7"
+                  >
+                    {dest.city}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             {/* Departure Date */}
@@ -217,35 +247,6 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
               </div>
             </div>
           )}
-
-          {/* Quick Select Destinations */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Popular Destinations:</Label>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_DESTINATIONS.map((dest) => (
-                <div key={dest.code} className="flex gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickSelect(dest.name, 'source')}
-                    className="text-xs"
-                  >
-                    From {dest.city}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickSelect(dest.name, 'destination')}
-                    className="text-xs"
-                  >
-                    To {dest.city}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Form Errors */}
           {Object.keys(errors).length > 0 && (
