@@ -13,6 +13,7 @@ export interface DatePickerProps {
   className?: string
   minDate?: Date
   maxDate?: Date
+  id?: string
 }
 
 const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(

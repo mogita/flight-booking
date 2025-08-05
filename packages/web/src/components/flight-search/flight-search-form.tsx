@@ -131,6 +131,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
                 From
               </Label>
               <CitySelector
+                id="source"
                 value={watch('source')}
                 onChange={(value) => setValue('source', value)}
                 placeholder="Departure city"
@@ -163,6 +164,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
                 To
               </Label>
               <CitySelector
+                id="destination"
                 value={watch('destination')}
                 onChange={(value) => setValue('destination', value)}
                 placeholder="Destination city"
@@ -182,6 +184,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
                 <span className="text-destructive">*</span>
               </Label>
               <DatePicker
+                id="departureDate"
                 value={watchedDepartureDate}
                 onChange={(date) => date && setValue('departureDate', date)}
                 minDate={today}
@@ -204,6 +207,7 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
                   Return
                 </Label>
                 <DatePicker
+                  id="returnDate"
                   value={watch('returnDate')}
                   onChange={(date) => setValue('returnDate', date)}
                   minDate={watchedDepartureDate || today}

@@ -101,7 +101,7 @@ export function Pagination({
           if (page === 'ellipsis') {
             return (
               <div key={`ellipsis-${index}`} className="px-3 py-2">
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" data-testid="more-horizontal-icon" />
               </div>
             )
           }

@@ -16,6 +16,7 @@ interface CitySelectorProps {
   cities: City[]
   className?: string
   error?: boolean
+  id?: string
 }
 
 export function CitySelector({
@@ -24,7 +25,8 @@ export function CitySelector({
   placeholder = "Select city",
   cities,
   className,
-  error = false
+  error = false,
+  id
 }: CitySelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -123,6 +125,7 @@ export function CitySelector({
       <div className="relative">
         <Input
           ref={inputRef}
+          id={id}
           value={displayValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}

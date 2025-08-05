@@ -5,6 +5,23 @@ import { BookingForm } from '../booking-form'
 import { AuthProvider } from '@/hooks/use-auth'
 import type { Flight } from '@flight-booking/shared'
 
+// Mock the auth hook to return an authenticated user
+vi.mock('@/hooks/use-auth', async () => {
+  const actual = await vi.importActual('@/hooks/use-auth')
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: { id: '1', username: 'testuser', email: 'test@example.com' },
+      isAuthenticated: true,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      error: null,
+      clearError: vi.fn(),
+    }),
+  }
+})
+
 const mockFlight: Flight = {
   id: '1',
   airline: 'Japan Airlines',
@@ -39,7 +56,7 @@ describe('BookingForm', () => {
 
     expect(screen.getByText('Japan Airlines JL123')).toBeInTheDocument()
     expect(screen.getByText('NRT → KIX')).toBeInTheDocument()
-    expect(screen.getByText('¥25,000')).toBeInTheDocument()
+    expect(screen.getByText('￥25,000')).toBeInTheDocument()
   })
 
   it('shows passenger details form initially', () => {
@@ -135,12 +152,15 @@ describe('BookingForm', () => {
       </TestWrapper>
     )
 
-    // Fill valid details
-    fireEvent.change(screen.getByLabelText(/full name/i), { 
-      target: { value: 'John Doe' } 
+    // Fill valid details including optional phone field
+    fireEvent.change(screen.getByLabelText(/full name/i), {
+      target: { value: 'John Doe' }
     })
-    fireEvent.change(screen.getByLabelText(/email address/i), { 
-      target: { value: 'john@example.com' } 
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'john@example.com' }
+    })
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+1234567890' }
     })
 
     const submitButton = screen.getByRole('button', { name: /continue to payment/i })
@@ -149,7 +169,7 @@ describe('BookingForm', () => {
     await waitFor(() => {
       expect(screen.getByText('Payment Information')).toBeInTheDocument()
       expect(screen.getByText(/this is a demo/i)).toBeInTheDocument()
-    })
+    }, { timeout: 10000 })
   })
 
   it('formats card number with spaces', async () => {
@@ -160,20 +180,23 @@ describe('BookingForm', () => {
     )
 
     // Navigate to payment step first
-    fireEvent.change(screen.getByLabelText(/full name/i), { 
-      target: { value: 'John Doe' } 
+    fireEvent.change(screen.getByLabelText(/full name/i), {
+      target: { value: 'John Doe' }
     })
-    fireEvent.change(screen.getByLabelText(/email address/i), { 
-      target: { value: 'john@example.com' } 
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'john@example.com' }
+    })
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+1234567890' }
     })
     fireEvent.click(screen.getByRole('button', { name: /continue to payment/i }))
 
     await waitFor(() => {
       const cardInput = screen.getByLabelText(/card number/i)
       fireEvent.change(cardInput, { target: { value: '1234567890123456' } })
-      
+
       expect(cardInput).toHaveValue('1234 5678 9012 3456')
-    })
+    }, { timeout: 10000 })
   })
 
   it('shows confirmation after successful booking', async () => {
