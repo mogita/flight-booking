@@ -21,13 +21,17 @@ A full-stack flight booking application with search, sorting, and booking functi
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Install dependencies (at project root)
 pnpm install
 
-# Start development servers (both frontend and backend)
+# Setup database (PostgreSQL required)
+cp .env.example .env                                        # Edit with your database credentials
+cd packages/server && pnpm db:migrate && pnpm db:seed       # Migrate database and add sample data
+
+# Start development servers for both frontend and backend (at project root)
 pnpm dev
 
-# Or start individually
+# Or start individually (at project root)
 pnpm dev:web    # Frontend only (http://localhost:5173)
 pnpm dev:server # Backend only (http://localhost:3000)
 ```
@@ -35,6 +39,7 @@ pnpm dev:server # Backend only (http://localhost:3000)
 ## Testing
 
 ```bash
+# Run at project root
 pnpm test        # Run all tests
 pnpm test:web    # Frontend tests only
 pnpm test:server # Backend tests only

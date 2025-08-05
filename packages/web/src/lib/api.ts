@@ -12,7 +12,7 @@ import type {
 } from '@flight-booking/shared'
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 // Global redirect handler for 401 errors
 let redirectToLogin: ((path?: string) => void) | null = null

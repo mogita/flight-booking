@@ -4,7 +4,7 @@ import { beforeAll, afterAll } from 'vitest'
 process.env.NODE_ENV = 'test'
 process.env.DATABASE_URL = 'postgresql://mogita:mogita@localhost:5432/flight_booking'
 process.env.JWT_SECRET = 'test-jwt-secret'
-process.env.PORT = '3001'
+process.env.PORT = '3000'
 
 beforeAll(async () => {
   // Setup test database or mock services if needed
