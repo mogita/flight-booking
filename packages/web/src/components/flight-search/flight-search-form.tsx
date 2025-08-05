@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Search, MapPin, Calendar, RotateCcw } from 'lucide-react'
+import { Search, MapPin, Calendar, ArrowLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -159,16 +159,16 @@ export function FlightSearchForm({ onSearch, isLoading = false, className }: Fli
             </div>
 
             {/* Swap Button */}
-            <div className="flex items-end">
+            <div className="flex items-center justify-center">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={handleSwapCities}
-                className="mb-2"
+                className="mt-[1.375rem]"
                 title="Swap cities"
               >
-                <RotateCcw className="h-4 w-4" />
+                <ArrowLeftRight className="h-4 w-4" />
               </Button>
             </div>
 
