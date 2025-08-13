@@ -1,268 +1,303 @@
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Search, MapPin, Calendar, ArrowLeftRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { DatePicker } from '@/components/ui/date-picker'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormError } from '@/components/ui/error'
-import { CitySelector } from '@/components/ui/city-selector'
-import { flightSearchSchema, type FlightSearchFormData } from '@/lib/validations'
-import { cn } from '@/lib/utils'
+import { zodResolver } from "@hookform/resolvers/zod"
+import { ArrowLeftRight, Calendar, MapPin, Search } from "lucide-react"
+import React, { useState } from "react"
+import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CitySelector } from "@/components/ui/city-selector"
+import { DatePicker } from "@/components/ui/date-picker"
+import { FormError } from "@/components/ui/error"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+import {
+	type FlightSearchFormData,
+	flightSearchSchema,
+} from "@/lib/validations"
 
 interface FlightSearchFormProps {
-  onSearch: (data: FlightSearchFormData) => void
-  isLoading?: boolean
-  className?: string
+	onSearch: (data: FlightSearchFormData) => void
+	isLoading?: boolean
+	className?: string
 }
 
 // Popular destinations for quick selection
 const POPULAR_DESTINATIONS = [
-  { code: 'NRT', name: 'Tokyo (NRT)', city: 'Tokyo' },
-  { code: 'KIX', name: 'Osaka (KIX)', city: 'Osaka' },
-  { code: 'FUK', name: 'Fukuoka (FUK)', city: 'Fukuoka' },
-  { code: 'CTS', name: 'Sapporo (CTS)', city: 'Sapporo' },
-  { code: 'OKA', name: 'Okinawa (OKA)', city: 'Okinawa' },
+	{ code: "NRT", name: "Tokyo (NRT)", city: "Tokyo" },
+	{ code: "KIX", name: "Osaka (KIX)", city: "Osaka" },
+	{ code: "FUK", name: "Fukuoka (FUK)", city: "Fukuoka" },
+	{ code: "CTS", name: "Sapporo (CTS)", city: "Sapporo" },
+	{ code: "OKA", name: "Okinawa (OKA)", city: "Okinawa" },
 ]
 
-export function FlightSearchForm({ onSearch, isLoading = false, className }: FlightSearchFormProps) {
-  const [isRoundTrip, setIsRoundTrip] = useState(false)
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-    reset,
-  } = useForm<FlightSearchFormData>({
-    resolver: zodResolver(flightSearchSchema),
-    defaultValues: {
-      source: '',
-      destination: '',
-      isRoundTrip: false,
-      departureDate: (() => {
-        const tomorrow = new Date()
-        tomorrow.setDate(tomorrow.getDate() + 1)
-        return tomorrow
-      })(), // Set to tomorrow by default
-    },
-  })
+export function FlightSearchForm({
+	onSearch,
+	isLoading = false,
+	className,
+}: FlightSearchFormProps) {
+	const [isRoundTrip, setIsRoundTrip] = useState(false)
 
-  const watchedDepartureDate = watch('departureDate')
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+		setValue,
+		watch,
+		reset,
+	} = useForm<FlightSearchFormData>({
+		resolver: zodResolver(flightSearchSchema),
+		defaultValues: {
+			source: "",
+			destination: "",
+			isRoundTrip: false,
+			departureDate: (() => {
+				const tomorrow = new Date()
+				tomorrow.setDate(tomorrow.getDate() + 1)
+				return tomorrow
+			})(), // Set to tomorrow by default
+		},
+	})
 
-  const onSubmit = (data: FlightSearchFormData) => {
-    onSearch(data)
-  }
+	const watchedDepartureDate = watch("departureDate")
 
-  const onError = (errors: any) => {
-    console.log('❌ Form validation failed:', errors)
-  }
+	const onSubmit = (data: FlightSearchFormData) => {
+		onSearch(data)
+	}
 
-  const handleRoundTripToggle = () => {
-    const newValue = !isRoundTrip
-    setIsRoundTrip(newValue)
-    setValue('isRoundTrip', newValue)
-    if (!newValue) {
-      setValue('returnDate', undefined)
-    }
-  }
+	const onError = (errors: any) => {
+		console.log("❌ Form validation failed:", errors)
+	}
 
-  const handleSwapCities = () => {
-    const source = watch('source')
-    const destination = watch('destination')
-    setValue('source', destination)
-    setValue('destination', source)
-  }
+	const handleRoundTripToggle = () => {
+		const newValue = !isRoundTrip
+		setIsRoundTrip(newValue)
+		setValue("isRoundTrip", newValue)
+		if (!newValue) {
+			setValue("returnDate", undefined)
+		}
+	}
 
+	const handleSwapCities = () => {
+		const source = watch("source")
+		const destination = watch("destination")
+		setValue("source", destination)
+		setValue("destination", source)
+	}
 
+	const handleReset = () => {
+		reset()
+		setIsRoundTrip(false)
+	}
 
-  const handleReset = () => {
-    reset()
-    setIsRoundTrip(false)
-  }
+	const today = new Date()
+	const maxDate = new Date()
+	maxDate.setFullYear(today.getFullYear() + 1) // Allow booking up to 1 year ahead
 
-  const today = new Date()
-  const maxDate = new Date()
-  maxDate.setFullYear(today.getFullYear() + 1) // Allow booking up to 1 year ahead
+	return (
+		<Card className={cn("w-full max-w-4xl mx-auto", className)}>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<Search className="h-6 w-6" />
+					Search Flights
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
+					{/* Trip Type Toggle */}
+					<div className="flex items-center space-x-4">
+						<Label className="text-base font-medium">Trip Type:</Label>
+						<div className="flex items-center space-x-2">
+							<input
+								type="radio"
+								id="one-way"
+								checked={!isRoundTrip}
+								onChange={() => handleRoundTripToggle()}
+								className="h-4 w-4"
+							/>
+							<Label htmlFor="one-way" className="cursor-pointer">
+								One Way
+							</Label>
+						</div>
+						<div className="flex items-center space-x-2">
+							<input
+								type="radio"
+								id="round-trip"
+								checked={isRoundTrip}
+								onChange={() => handleRoundTripToggle()}
+								className="h-4 w-4"
+							/>
+							<Label htmlFor="round-trip" className="cursor-pointer">
+								Round Trip
+							</Label>
+						</div>
+					</div>
 
-  return (
-    <Card className={cn('w-full max-w-4xl mx-auto', className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="h-6 w-6" />
-          Search Flights
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
-          {/* Trip Type Toggle */}
-          <div className="flex items-center space-x-4">
-            <Label className="text-base font-medium">Trip Type:</Label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="one-way"
-                checked={!isRoundTrip}
-                onChange={() => handleRoundTripToggle()}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="one-way" className="cursor-pointer">One Way</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="round-trip"
-                checked={isRoundTrip}
-                onChange={() => handleRoundTripToggle()}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="round-trip" className="cursor-pointer">Round Trip</Label>
-            </div>
-          </div>
+					{/* Location and Date Fields */}
+					<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+						{/* From Field */}
+						<div className="space-y-2">
+							<Label htmlFor="source" className="flex items-center gap-2">
+								<MapPin className="h-4 w-4" />
+								From
+							</Label>
+							<CitySelector
+								id="source"
+								value={watch("source")}
+								onChange={(value) => setValue("source", value)}
+								placeholder="Departure city"
+								cities={POPULAR_DESTINATIONS}
+								error={!!errors.source}
+							/>
+							{errors.source && (
+								<p className="text-sm text-destructive">
+									{errors.source.message}
+								</p>
+							)}
+						</div>
 
-          {/* Location and Date Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* From Field */}
-            <div className="space-y-2">
-              <Label htmlFor="source" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                From
-              </Label>
-              <CitySelector
-                id="source"
-                value={watch('source')}
-                onChange={(value) => setValue('source', value)}
-                placeholder="Departure city"
-                cities={POPULAR_DESTINATIONS}
-                error={!!errors.source}
-              />
-              {errors.source && (
-                <p className="text-sm text-destructive">{errors.source.message}</p>
-              )}
-            </div>
+						{/* Swap Button */}
+						<div className="flex items-center justify-center">
+							<Button
+								type="button"
+								variant="outline"
+								size="icon"
+								onClick={handleSwapCities}
+								className="mt-[1.375rem]"
+								title="Swap cities"
+							>
+								<ArrowLeftRight className="h-4 w-4" />
+							</Button>
+						</div>
 
-            {/* Swap Button */}
-            <div className="flex items-center justify-center">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handleSwapCities}
-                className="mt-[1.375rem]"
-                title="Swap cities"
-              >
-                <ArrowLeftRight className="h-4 w-4" />
-              </Button>
-            </div>
+						{/* To Field */}
+						<div className="space-y-2">
+							<Label htmlFor="destination" className="flex items-center gap-2">
+								<MapPin className="h-4 w-4" />
+								To
+							</Label>
+							<CitySelector
+								id="destination"
+								value={watch("destination")}
+								onChange={(value) => setValue("destination", value)}
+								placeholder="Destination city"
+								cities={POPULAR_DESTINATIONS}
+								error={!!errors.destination}
+							/>
+							{errors.destination && (
+								<p className="text-sm text-destructive">
+									{errors.destination.message}
+								</p>
+							)}
+						</div>
 
-            {/* To Field */}
-            <div className="space-y-2">
-              <Label htmlFor="destination" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                To
-              </Label>
-              <CitySelector
-                id="destination"
-                value={watch('destination')}
-                onChange={(value) => setValue('destination', value)}
-                placeholder="Destination city"
-                cities={POPULAR_DESTINATIONS}
-                error={!!errors.destination}
-              />
-              {errors.destination && (
-                <p className="text-sm text-destructive">{errors.destination.message}</p>
-              )}
-            </div>
+						{/* Departure Date */}
+						<div className="space-y-2">
+							<Label
+								htmlFor="departureDate"
+								className="flex items-center gap-2"
+							>
+								<Calendar className="h-4 w-4" />
+								Departure
+								<span className="text-destructive">*</span>
+							</Label>
+							<DatePicker
+								id="departureDate"
+								value={watchedDepartureDate}
+								onChange={(date) => date && setValue("departureDate", date)}
+								minDate={today}
+								maxDate={maxDate}
+								placeholder="Select departure date"
+								className={errors.departureDate ? "border-destructive" : ""}
+							/>
+							{errors.departureDate && (
+								<p className="text-sm text-destructive">
+									{errors.departureDate.message}
+								</p>
+							)}
+						</div>
+					</div>
 
-            {/* Departure Date */}
-            <div className="space-y-2">
-              <Label htmlFor="departureDate" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Departure
-                <span className="text-destructive">*</span>
-              </Label>
-              <DatePicker
-                id="departureDate"
-                value={watchedDepartureDate}
-                onChange={(date) => date && setValue('departureDate', date)}
-                minDate={today}
-                maxDate={maxDate}
-                placeholder="Select departure date"
-                className={errors.departureDate ? 'border-destructive' : ''}
-              />
-              {errors.departureDate && (
-                <p className="text-sm text-destructive">{errors.departureDate.message}</p>
-              )}
-            </div>
-          </div>
+					{/* Return Date (Round Trip Only) */}
+					{isRoundTrip && (
+						<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+							<div className="md:col-start-4 space-y-2">
+								<Label htmlFor="returnDate" className="flex items-center gap-2">
+									<Calendar className="h-4 w-4" />
+									Return
+								</Label>
+								<DatePicker
+									id="returnDate"
+									value={watch("returnDate")}
+									onChange={(date) => setValue("returnDate", date)}
+									minDate={watchedDepartureDate || today}
+									maxDate={maxDate}
+									placeholder="Select return date"
+									className={errors.returnDate ? "border-destructive" : ""}
+								/>
+								{errors.returnDate && (
+									<p className="text-sm text-destructive">
+										{errors.returnDate.message}
+									</p>
+								)}
+							</div>
+						</div>
+					)}
 
-          {/* Return Date (Round Trip Only) */}
-          {isRoundTrip && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-start-4 space-y-2">
-                <Label htmlFor="returnDate" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Return
-                </Label>
-                <DatePicker
-                  id="returnDate"
-                  value={watch('returnDate')}
-                  onChange={(date) => setValue('returnDate', date)}
-                  minDate={watchedDepartureDate || today}
-                  maxDate={maxDate}
-                  placeholder="Select return date"
-                  className={errors.returnDate ? 'border-destructive' : ''}
-                />
-                {errors.returnDate && (
-                  <p className="text-sm text-destructive">{errors.returnDate.message}</p>
-                )}
-              </div>
-            </div>
-          )}
+					{/* Form Errors - exclude field-specific errors that are already shown next to fields */}
+					{Object.keys(errors).filter(
+						(key) =>
+							![
+								"source",
+								"destination",
+								"departureDate",
+								"returnDate",
+							].includes(key),
+					).length > 0 && (
+						<FormError
+							errors={Object.entries(errors)
+								.filter(
+									([key]) =>
+										![
+											"source",
+											"destination",
+											"departureDate",
+											"returnDate",
+										].includes(key),
+								)
+								.map(([, error]) => error?.message || "Invalid input")}
+						/>
+					)}
 
-          {/* Form Errors - exclude field-specific errors that are already shown next to fields */}
-          {Object.keys(errors).filter(key => !['source', 'destination', 'departureDate', 'returnDate'].includes(key)).length > 0 && (
-            <FormError
-              errors={Object.entries(errors)
-                .filter(([key]) => !['source', 'destination', 'departureDate', 'returnDate'].includes(key))
-                .map(([, error]) => error?.message || 'Invalid input')
-              }
-            />
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleReset}
-              disabled={isLoading}
-            >
-              Reset
-            </Button>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isLoading}
-              className="px-8"
-            >
-              {isLoading ? (
-                <>
-                  <Search className="mr-2 h-4 w-4 animate-spin" />
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Search Flights
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  )
+					{/* Action Buttons */}
+					<div className="flex justify-between items-center">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handleReset}
+							disabled={isLoading}
+						>
+							Reset
+						</Button>
+						<Button
+							type="submit"
+							size="lg"
+							disabled={isLoading}
+							className="px-8"
+						>
+							{isLoading ? (
+								<>
+									<Search className="mr-2 h-4 w-4 animate-spin" />
+									Searching...
+								</>
+							) : (
+								<>
+									<Search className="mr-2 h-4 w-4" />
+									Search Flights
+								</>
+							)}
+						</Button>
+					</div>
+				</form>
+			</CardContent>
+		</Card>
+	)
 }
