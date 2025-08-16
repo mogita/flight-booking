@@ -7,13 +7,11 @@ import { logger } from "../utils/logger"
 
 const router: Router = Router()
 
-// Login schema
 const loginSchema = z.object({
 	username: z.string().min(1, "Username is required"),
 	password: z.string().min(1, "Password is required"),
 })
 
-// Hardcoded credentials as per requirements
 const VALID_CREDENTIALS = {
 	username: "user",
 	password: "user",
@@ -26,19 +24,14 @@ router.post(
 		try {
 			const { username, password } = req.body
 
-			// Validate credentials
 			if (
 				username !== VALID_CREDENTIALS.username ||
 				password !== VALID_CREDENTIALS.password
 			) {
-				logger.warn("Failed login attempt", { username, ip: req.ip })
 				throw new ApiError("Invalid credentials", 401)
 			}
 
-			// Generate token
 			const token = generateToken(username)
-
-			logger.info("Successful login", { username, ip: req.ip })
 
 			res.json({
 				success: true,
@@ -58,7 +51,7 @@ router.post(
 router.post("/validate", async (req, res, next) => {
 	try {
 		const authHeader = req.headers.authorization
-		const token = authHeader && authHeader.split(" ")[1] // Bearer TOKEN
+		const token = authHeader?.split(" ")?.[1]
 
 		if (!token) {
 			throw new ApiError("Access token required", 401)
@@ -66,11 +59,6 @@ router.post("/validate", async (req, res, next) => {
 
 		// Verify token using server-side validation
 		const payload = verifyToken(token)
-
-		logger.info("Token validation successful", {
-			username: payload.username,
-			ip: req.ip,
-		})
 
 		res.json({
 			success: true,
