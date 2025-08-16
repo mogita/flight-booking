@@ -43,23 +43,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	// Check for existing token on mount
 	useEffect(() => {
-		const token = api.auth.getToken()
-		if (token) {
-			// In a real app, you'd validate the token with the server
-			// For now, we'll assume it's valid and extract user info
-			try {
-				// Simple token parsing (in production, use proper JWT parsing)
-				const payload = JSON.parse(atob(token.split(".")[1]))
-				setUser({
-					username: payload.username,
-					token,
-				})
-			} catch (error) {
-				// Invalid token, remove it
-				api.auth.logout()
+		const validateExistingToken = async () => {
+			const token = api.auth.getToken()
+			if (token) {
+				// Validate token with server-side verification
+				const validationResult = await api.auth.validateToken(token)
+				if (validationResult?.valid) {
+					setUser({
+						username: validationResult.user.username,
+						token,
+					})
+				} else {
+					// Token is invalid or validation failed.
+					// api.auth.validateToken may have already removed the token from localStorage.
+					setUser(null)
+					// Clear local storage
+					api.auth.logout()
+				}
 			}
+			setIsLoading(false)
 		}
-		setIsLoading(false)
+
+		validateExistingToken()
 	}, [])
 
 	const login = async (credentials: LoginRequest) => {

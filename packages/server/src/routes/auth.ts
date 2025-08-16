@@ -2,18 +2,16 @@ import { Router } from "express"
 import { z } from "zod"
 import { ApiError } from "../middleware/error-handler"
 import { validateRequest } from "../middleware/validation"
-import { generateToken } from "../utils/jwt"
+import { generateToken, verifyToken } from "../utils/jwt"
 import { logger } from "../utils/logger"
 
-const router = Router()
+const router: Router = Router()
 
-// Login schema
 const loginSchema = z.object({
 	username: z.string().min(1, "Username is required"),
 	password: z.string().min(1, "Password is required"),
 })
 
-// Hardcoded credentials as per requirements
 const VALID_CREDENTIALS = {
 	username: "user",
 	password: "user",
@@ -26,19 +24,14 @@ router.post(
 		try {
 			const { username, password } = req.body
 
-			// Validate credentials
 			if (
 				username !== VALID_CREDENTIALS.username ||
 				password !== VALID_CREDENTIALS.password
 			) {
-				logger.warn("Failed login attempt", { username, ip: req.ip })
 				throw new ApiError("Invalid credentials", 401)
 			}
 
-			// Generate token
 			const token = generateToken(username)
-
-			logger.info("Successful login", { username, ip: req.ip })
 
 			res.json({
 				success: true,
@@ -53,5 +46,38 @@ router.post(
 		}
 	},
 )
+
+// Token validation endpoint
+router.post("/validate", async (req, res, next) => {
+	try {
+		const authHeader = req.headers.authorization
+		const token = authHeader?.split(" ")?.[1]
+
+		if (!token) {
+			throw new ApiError("Access token required", 401)
+		}
+
+		// Verify token using server-side validation
+		const payload = verifyToken(token)
+
+		res.json({
+			success: true,
+			data: {
+				user: { username: payload.username },
+				valid: true,
+			},
+		})
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Token validation failed"
+		logger.warn("Token validation failed", {
+			error: errorMessage,
+			ip: req.ip,
+		})
+
+		// Return 401 for any token validation errors
+		next(new ApiError(errorMessage, 401))
+	}
+})
 
 export default router

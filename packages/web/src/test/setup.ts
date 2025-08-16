@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom"
+import { vi } from "vitest"
 
 // Mock environment variables
 Object.defineProperty(import.meta, "env", {
@@ -28,3 +29,5 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 	unobserve: vi.fn(),
 	disconnect: vi.fn(),
 }))
+
+

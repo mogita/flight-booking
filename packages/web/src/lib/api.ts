@@ -33,19 +33,27 @@ export class ApiError extends Error {
 	}
 }
 
+// Extended RequestInit interface to include custom options
+interface ApiRequestOptions extends RequestInit {
+	skipGlobalAuth401Handler?: boolean
+}
+
 // Generic API request function
 async function apiRequest<T>(
 	endpoint: string,
-	options: RequestInit = {},
-): Promise<T> {
+	options: ApiRequestOptions = {},
+): Promise<T | undefined> {
 	const url = `${API_BASE_URL}/api${endpoint}`
+
+	// Extract custom options before passing to fetch
+	const { skipGlobalAuth401Handler, ...fetchOptions } = options
 
 	const config: RequestInit = {
 		headers: {
 			"Content-Type": "application/json",
-			...options.headers,
+			...fetchOptions.headers,
 		},
-		...options,
+		...fetchOptions,
 	}
 
 	// Add auth token if available
@@ -62,13 +70,17 @@ async function apiRequest<T>(
 		const data = await response.json()
 
 		if (!response.ok) {
-			// Handle 401 Unauthorized errors with automatic redirect
-			if (response.status === 401 && redirectToLogin) {
+			// Handle 401 Unauthorized errors with automatic redirect (unless skipped)
+			if (
+				response.status === 401 &&
+				redirectToLogin &&
+				!skipGlobalAuth401Handler
+			) {
 				// Clear invalid token
 				localStorage.removeItem("auth-token")
 				// Redirect to login with current path as return URL
 				redirectToLogin(window.location.pathname + window.location.search)
-				return // Don't throw error, let redirect handle it
+				return undefined
 			}
 
 			throw new ApiError(
@@ -118,6 +130,36 @@ export const authApi = {
 
 	isAuthenticated: (): boolean => {
 		return !!localStorage.getItem("auth-token")
+	},
+
+	validateToken: async (
+		token: string,
+	): Promise<{ user: { username: string }; valid: boolean } | null> => {
+		try {
+			const response = await apiRequest<
+				ApiResponse<{ user: { username: string }; valid: boolean }>
+			>("/auth/validate", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+				skipGlobalAuth401Handler: true, // Prevent automatic redirect on 401
+			})
+			return response.data || null
+		} catch (error) {
+			console.error("Token validation request failed:", error)
+
+			if (error instanceof ApiError && error.status === 401) {
+				// Handle 401 specifically - token is invalid
+				// Token is invalid, remove it
+				localStorage.removeItem("auth-token")
+				return null
+			}
+
+			// For other errors (network issues, etc.), don't remove token
+			// as it might be a temporary issue
+			return null
+		}
 	},
 }
 
