@@ -46,20 +46,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		const validateExistingToken = async () => {
 			const token = api.auth.getToken()
 			if (token) {
-				try {
-					// Validate token with server-side verification
-					const validationResult = await api.auth.validateToken(token)
-					if (validationResult && validationResult.valid) {
-						setUser({
-							username: validationResult.user.username,
-							token,
-						})
-					} else {
-						// Token is invalid, remove it
-						api.auth.logout()
-					}
-				} catch {
-					// Token validation failed, remove it
+				// Validate token with server-side verification
+				const validationResult = await api.auth.validateToken(token)
+				if (validationResult?.valid) {
+					setUser({
+						username: validationResult.user.username,
+						token,
+					})
+				} else {
+					// Token is invalid or validation failed.
+					// api.auth.validateToken may have already removed the token from localStorage.
+					setUser(null)
+					// Clear local storage
 					api.auth.logout()
 				}
 			}
