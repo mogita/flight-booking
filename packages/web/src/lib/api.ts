@@ -134,6 +134,7 @@ export const authApi = {
 			})
 			return response.data || null
 		} catch (error) {
+			console.error("Token validation request failed:", error)
 			// Token is invalid, remove it
 			localStorage.removeItem("auth-token")
 			return null
