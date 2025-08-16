@@ -119,6 +119,26 @@ export const authApi = {
 	isAuthenticated: (): boolean => {
 		return !!localStorage.getItem("auth-token")
 	},
+
+	validateToken: async (
+		token: string,
+	): Promise<{ user: { username: string }; valid: boolean } | null> => {
+		try {
+			const response = await apiRequest<
+				ApiResponse<{ user: { username: string }; valid: boolean }>
+			>("/auth/validate", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
+			return response.data || null
+		} catch (error) {
+			// Token is invalid, remove it
+			localStorage.removeItem("auth-token")
+			return null
+		}
+	},
 }
 
 // Flights API

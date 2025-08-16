@@ -1,6 +1,7 @@
 import request from "supertest"
 import { describe, expect, it } from "vitest"
 import { createApp } from "../../app"
+import { generateToken } from "../../utils/jwt"
 
 describe("Auth Routes", () => {
 	const app = createApp()
@@ -61,6 +62,56 @@ describe("Auth Routes", () => {
 				.expect(400)
 
 			expect(response.body.success).toBe(false)
+		})
+	})
+
+	describe("POST /api/auth/validate", () => {
+		it("should validate a valid token", async () => {
+			const token = generateToken("user")
+
+			const response = await request(app)
+				.post("/api/auth/validate")
+				.set("Authorization", `Bearer ${token}`)
+				.expect(200)
+
+			expect(response.body).toMatchObject({
+				success: true,
+				data: {
+					user: { username: "user" },
+					valid: true,
+				},
+			})
+		})
+
+		it("should reject request without token", async () => {
+			const response = await request(app).post("/api/auth/validate").expect(401)
+
+			expect(response.body).toMatchObject({
+				success: false,
+				error: "Access token required",
+			})
+		})
+
+		it("should reject invalid token", async () => {
+			const response = await request(app)
+				.post("/api/auth/validate")
+				.set("Authorization", "Bearer invalid-token")
+				.expect(401)
+
+			expect(response.body.success).toBe(false)
+			expect(response.body.error).toContain("Invalid token")
+		})
+
+		it("should reject malformed authorization header", async () => {
+			const response = await request(app)
+				.post("/api/auth/validate")
+				.set("Authorization", "InvalidFormat")
+				.expect(401)
+
+			expect(response.body).toMatchObject({
+				success: false,
+				error: "Access token required",
+			})
 		})
 	})
 })
