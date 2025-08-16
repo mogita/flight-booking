@@ -44,7 +44,6 @@ export function LoginPage() {
 		handleSubmit,
 		formState: { errors },
 		setValue,
-		watch,
 	} = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 		defaultValues: {
@@ -156,7 +155,7 @@ export function LoginPage() {
 			const resetAttempts = { count: 0, lastAttempt: 0 }
 			setLoginAttempts(resetAttempts)
 			localStorage.setItem("loginAttempts", JSON.stringify(resetAttempts))
-		} catch (error) {
+		} catch {
 			// Security: Track failed attempts
 			// For the demo purpose only. For production, use server-side tracking
 			const now = Date.now()
@@ -176,7 +175,7 @@ export function LoginPage() {
 		}
 	}
 
-	const onError = (errors: any) => {
+	const onError = (errors: Record<string, unknown>) => {
 		console.log("Login form validation failed:", errors)
 	}
 

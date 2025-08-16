@@ -1,7 +1,7 @@
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import * as React from "react"
-import { Button } from "@/components/ui/button"
+
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -30,7 +30,6 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
 		},
 		ref,
 	) => {
-		const [isOpen, setIsOpen] = React.useState(false)
 		const [inputValue, setInputValue] = React.useState(
 			value ? format(value, "yyyy-MM-dd") : "",
 		)
@@ -49,7 +48,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
 
 			if (dateValue) {
 				const date = new Date(dateValue + "T00:00:00") // Add time to avoid timezone issues
-				if (!isNaN(date.getTime())) {
+				if (!Number.isNaN(date.getTime())) {
 					// Check date constraints
 					if (minDate && date < minDate) return
 					if (maxDate && date > maxDate) return

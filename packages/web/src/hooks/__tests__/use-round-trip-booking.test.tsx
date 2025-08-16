@@ -14,11 +14,12 @@ const mockOutboundFlight: Flight = {
 	destination: "Osaka (KIX)",
 	departure_time: "2025-08-06T00:57:00Z",
 	arrival_time: "2025-08-06T02:27:00Z",
+	departure_date: "2025-08-06",
+	arrival_date: "2025-08-06",
 	price: 46666,
 	is_round_trip: false,
-	duration: 90,
-	aircraft_type: "Boeing 737",
-	available_seats: 150,
+	created_at: "2025-08-05T00:00:00Z",
+	updated_at: "2025-08-05T00:00:00Z",
 }
 
 const mockReturnFlight: Flight = {
@@ -29,11 +30,12 @@ const mockReturnFlight: Flight = {
 	destination: "Tokyo (NRT)",
 	departure_time: "2025-08-10T14:45:00Z",
 	arrival_time: "2025-08-10T16:15:00Z",
+	departure_date: "2025-08-10",
+	arrival_date: "2025-08-10",
 	price: 43407,
 	is_round_trip: false,
-	duration: 90,
-	aircraft_type: "Airbus A320",
-	available_seats: 180,
+	created_at: "2025-08-09T00:00:00Z",
+	updated_at: "2025-08-09T00:00:00Z",
 }
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (

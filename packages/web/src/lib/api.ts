@@ -9,6 +9,7 @@ import type {
 	FlightSearchResponse,
 	LoginRequest,
 	LoginResponse,
+	RoundTripBooking,
 } from "@flight-booking/shared"
 
 // API Configuration
@@ -26,7 +27,7 @@ export class ApiError extends Error {
 	constructor(
 		message: string,
 		public status: number,
-		public response?: any,
+		public response?: unknown,
 	) {
 		super(message)
 		this.name = "ApiError"
@@ -112,12 +113,15 @@ export const authApi = {
 			},
 		)
 
-		// Store token in localStorage
-		if (response.data?.token) {
+		if (response?.data?.token) {
 			localStorage.setItem("auth-token", response.data.token)
 		}
 
-		return response.data!
+		if (!response?.data) {
+			throw new ApiError("Login failed - no response data", 500)
+		}
+
+		return response.data
 	},
 
 	logout: () => {
@@ -145,7 +149,7 @@ export const authApi = {
 				},
 				skipGlobalAuth401Handler: true, // Prevent automatic redirect on 401
 			})
-			return response.data || null
+			return response?.data || null
 		} catch (error) {
 			console.error("Token validation request failed:", error)
 
@@ -178,12 +182,21 @@ export const flightsApi = {
 			`/flights?${searchParams.toString()}`,
 		)
 
-		return response.data!
+		if (!response?.data) {
+			throw new ApiError("Failed to fetch flights - no response data", 500)
+		}
+
+		return response.data
 	},
 
 	getById: async (id: string): Promise<Flight> => {
 		const response = await apiRequest<ApiResponse<Flight>>(`/flights/${id}`)
-		return response.data!
+
+		if (!response?.data) {
+			throw new ApiError("Failed to fetch flight - no response data", 500)
+		}
+
+		return response.data
 	},
 }
 
@@ -194,33 +207,56 @@ export const bookingsApi = {
 			method: "POST",
 			body: JSON.stringify(booking),
 		})
-		return response.data!
+
+		if (!response?.data) {
+			throw new ApiError("Failed to create booking - no response data", 500)
+		}
+
+		return response.data
 	},
 
 	createRoundTrip: async (
 		booking: CreateRoundTripBookingRequest,
-	): Promise<any> => {
-		const response = await apiRequest<ApiResponse<any>>(
+	): Promise<RoundTripBooking> => {
+		const response = await apiRequest<ApiResponse<RoundTripBooking>>(
 			"/bookings/round-trip",
 			{
 				method: "POST",
 				body: JSON.stringify(booking),
 			},
 		)
-		return response.data!
+
+		if (!response?.data) {
+			throw new ApiError(
+				"Failed to create round trip booking - no response data",
+				500,
+			)
+		}
+
+		return response.data
 	},
 
 	getAll: async (): Promise<BookingWithFlight[]> => {
 		const response =
 			await apiRequest<ApiResponse<BookingWithFlight[]>>("/bookings")
-		return response.data!
+
+		if (!response?.data) {
+			throw new ApiError("Failed to fetch bookings - no response data", 500)
+		}
+
+		return response.data
 	},
 
 	getById: async (id: string): Promise<BookingWithFlight> => {
 		const response = await apiRequest<ApiResponse<BookingWithFlight>>(
 			`/bookings/${id}`,
 		)
-		return response.data!
+
+		if (!response?.data) {
+			throw new ApiError("Failed to fetch booking - no response data", 500)
+		}
+
+		return response.data
 	},
 
 	update: async (
@@ -231,7 +267,12 @@ export const bookingsApi = {
 			method: "PUT",
 			body: JSON.stringify(updates),
 		})
-		return response.data!
+
+		if (!response?.data) {
+			throw new ApiError("Failed to update booking - no response data", 500)
+		}
+
+		return response.data
 	},
 
 	delete: async (id: string): Promise<void> => {

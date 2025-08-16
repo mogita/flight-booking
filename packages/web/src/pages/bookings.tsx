@@ -1,5 +1,5 @@
 import type { BookingWithFlight } from "@flight-booking/shared"
-import { ArrowRight, Calendar, Clock, MapPin, Plane, User } from "lucide-react"
+import { Calendar, Clock, MapPin, Plane, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ErrorState } from "@/components/ui/error"
 import { LoadingState } from "@/components/ui/loading"
 import { useApi } from "@/hooks/use-api"
-import { ProtectedRoute, useAuth } from "@/hooks/use-auth"
+import { ProtectedRoute } from "@/hooks/use-auth"
 import { api } from "@/lib/api"
 
 // Group bookings by round trip
@@ -21,8 +21,6 @@ interface GroupedBooking {
 
 export function BookingsPage() {
 	const navigate = useNavigate()
-	const { user } = useAuth()
-	const [bookings, setBookings] = useState<BookingWithFlight[]>([])
 	const [groupedBookings, setGroupedBookings] = useState<GroupedBooking[]>([])
 
 	// Fetch user's bookings
@@ -35,8 +33,6 @@ export function BookingsPage() {
 
 	useEffect(() => {
 		if (fetchedBookings) {
-			setBookings(fetchedBookings)
-
 			// Group bookings by round trip
 			const grouped: GroupedBooking[] = []
 			const processedRoundTripIds = new Set<string>()
@@ -136,19 +132,6 @@ export function BookingsPage() {
 			minute: "2-digit",
 			hour12: false,
 		})
-	}
-
-	const getStatusColor = (status: string) => {
-		switch (status.toLowerCase()) {
-			case "confirmed":
-				return "text-green-600 bg-green-50 border-green-200"
-			case "pending":
-				return "text-yellow-600 bg-yellow-50 border-yellow-200"
-			case "cancelled":
-				return "text-red-600 bg-red-50 border-red-200"
-			default:
-				return "text-gray-600 bg-gray-50 border-gray-200"
-		}
 	}
 
 	if (isLoading) {

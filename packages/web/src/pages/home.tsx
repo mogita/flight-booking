@@ -1,6 +1,10 @@
-import type { Flight, FlightSearchResponse } from "@flight-booking/shared"
+import type {
+	Flight,
+	FlightSearchParams,
+	FlightSearchResponse,
+} from "@flight-booking/shared"
 import { DEFAULT_PAGE_SIZE } from "@flight-booking/shared"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FlightSearchForm } from "@/components/flight-search/flight-search-form"
 import { FlightSearchResults } from "@/components/flight-search/flight-search-results"
@@ -24,12 +28,13 @@ export function HomePage() {
 		| "departure_desc"
 		| "duration_asc"
 	>("price_asc")
-	const [lastSearchParams, setLastSearchParams] = useState<any>(null)
+	const [lastSearchParams, setLastSearchParams] =
+		useState<FlightSearchParams | null>(null)
 	const {
 		execute: searchFlights,
 		isLoading,
 		error,
-	} = useAsyncOperation<FlightSearchResponse, any>()
+	} = useAsyncOperation<FlightSearchResponse, FlightSearchParams>()
 
 	const {
 		isRoundTrip,
