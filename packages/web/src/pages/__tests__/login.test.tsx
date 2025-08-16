@@ -176,7 +176,7 @@ describe("LoginPage", () => {
 		})
 	})
 
-	it("shows account lockout after max attempts", () => {
+	it("shows account lockout after max attempts", async () => {
 		// Mock localStorage to return max attempts reached
 		localStorageMock.getItem.mockReturnValue(
 			JSON.stringify({
@@ -192,12 +192,15 @@ describe("LoginPage", () => {
 			</TestWrapper>,
 		)
 
-		expect(screen.getByText("Account Temporarily Locked")).toBeInTheDocument()
+		await waitFor(() => {
+			expect(screen.getByText("Account Temporarily Locked")).toBeInTheDocument()
+		})
+
 		expect(
 			screen.getByText(/too many failed login attempts/i),
 		).toBeInTheDocument()
 
-		const submitButton = screen.getByRole("button", { name: /sign in/i })
+		const submitButton = screen.getByRole("button", { name: /sign(ing)? in/i })
 		expect(submitButton).toBeDisabled()
 	})
 
@@ -216,6 +219,11 @@ describe("LoginPage", () => {
 			</TestWrapper>,
 		)
 
+		// Wait for component to initialize
+		await waitFor(() => {
+			expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+		})
+
 		// Trigger another failed login
 		fireEvent.change(screen.getByLabelText(/username/i), {
 			target: { value: "wrong" },
@@ -224,7 +232,7 @@ describe("LoginPage", () => {
 			target: { value: "wrong" },
 		})
 
-		const submitButton = screen.getByRole("button", { name: /sign in/i })
+		const submitButton = screen.getByRole("button", { name: /sign(ing)? in/i })
 		fireEvent.click(submitButton)
 
 		await waitFor(() => {
