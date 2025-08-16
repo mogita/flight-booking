@@ -19,8 +19,6 @@ export function HomePage() {
 		useState<FlightSearchResponse | null>(null)
 	const [returnSearchResults, setReturnSearchResults] =
 		useState<FlightSearchResponse | null>(null)
-	const [outboundPage, setOutboundPage] = useState(1)
-	const [returnPage, setReturnPage] = useState(1)
 	const [currentSort, setCurrentSort] = useState<
 		| "price_asc"
 		| "price_desc"
@@ -82,7 +80,6 @@ export function HomePage() {
 				)
 				setSearchResults(outboundResults)
 				setOutboundFlights(outboundResults?.flights || [])
-				setOutboundPage(1)
 
 				// If round trip, also search for return flights
 				if (formData.isRoundTrip && formData.returnDate) {
@@ -101,7 +98,6 @@ export function HomePage() {
 					)
 					setReturnSearchResults(returnResults)
 					setReturnFlights(returnResults?.flights || [])
-					setReturnPage(1)
 				} else {
 					setReturnSearchResults(null)
 					setReturnFlights([])
@@ -113,8 +109,6 @@ export function HomePage() {
 				setOutboundFlights([])
 				setReturnSearchResults(null)
 				setReturnFlights([])
-				setOutboundPage(1)
-				setReturnPage(1)
 			}
 		} catch (error) {
 			console.error("Flight search failed:", error)
@@ -147,8 +141,6 @@ export function HomePage() {
 		if (!lastSearchParams) return
 
 		try {
-			setOutboundPage(page)
-
 			const newParams = {
 				...lastSearchParams,
 				page,
@@ -170,8 +162,6 @@ export function HomePage() {
 		if (!lastSearchParams) return
 
 		try {
-			setReturnPage(page)
-
 			const returnParams = {
 				source: lastSearchParams.destination,
 				destination: lastSearchParams.source,
@@ -220,7 +210,6 @@ export function HomePage() {
 			const outboundResults = await searchFlights(api.flights.search, newParams)
 			setSearchResults(outboundResults)
 			setOutboundFlights(outboundResults?.flights || [])
-			setOutboundPage(1)
 
 			// If round trip, also re-search return flights with new sort
 			if (isRoundTrip && returnSearchResults) {
