@@ -68,15 +68,15 @@ router.post("/validate", async (req, res, next) => {
 			},
 		})
 	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Token validation failed"
 		logger.warn("Token validation failed", {
-			error: error instanceof Error ? error.message : "Unknown error",
+			error: errorMessage,
 			ip: req.ip,
 		})
 
 		// Return 401 for any token validation errors
-		const message =
-			error instanceof Error ? error.message : "Token validation failed"
-		next(new ApiError(message, 401))
+		next(new ApiError(errorMessage, 401))
 	}
 })
 
