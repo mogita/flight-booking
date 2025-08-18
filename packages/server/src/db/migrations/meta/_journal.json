@@ -1,20 +1,34 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1754319280849,
-			"tag": "0000_faithful_brood",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1754383203150,
-			"tag": "0001_right_cable",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1754319280849,
+      "tag": "0000_faithful_brood",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1754383203150,
+      "tag": "0001_right_cable",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755509948460,
+      "tag": "0002_dapper_retro_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755511136297,
+      "tag": "0003_acoustic_molly_hayes",
+      "breakpoints": true
+    }
+  ]
 }
