@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull } from "drizzle-orm"
-import { Router } from "express"
+import { type Router as ExpressRouter, Router } from "express"
 import { z } from "zod"
 import { db } from "../db/connection"
 import { bookings, flights, roundTripBookings } from "../db/schema"
@@ -8,7 +8,7 @@ import { ApiError } from "../middleware/error-handler"
 import { validateRequest } from "../middleware/validation"
 import { logger } from "../utils/logger"
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Create booking schema
 const createBookingSchema = z.object({

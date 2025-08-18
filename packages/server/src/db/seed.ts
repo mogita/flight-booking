@@ -51,8 +51,11 @@ const generateFlightsForYear = () => {
 						const prefix = flightPrefixes[airlineIndex]
 
 						// Calculate flight duration based on distance (rough estimates)
-						const getFlightDuration = (src, dest) => {
-							const durations = {
+						const getFlightDuration = (
+							src: { name: string },
+							dest: { name: string },
+						): number => {
+							const durations: Record<string, number> = {
 								"Tokyo-Osaka": 90,
 								"Tokyo-Fukuoka": 135,
 								"Tokyo-Sapporo": 105,
@@ -94,8 +97,11 @@ const generateFlightsForYear = () => {
 						) // duration in minutes
 
 						// Calculate base price based on distance and add variation
-						const getBasePrice = (src, dest) => {
-							const prices = {
+						const getBasePrice = (
+							src: { name: string },
+							dest: { name: string },
+						): number => {
+							const prices: Record<string, number> = {
 								"Tokyo-Osaka": 45000,
 								"Tokyo-Fukuoka": 55000,
 								"Tokyo-Sapporo": 42000,
