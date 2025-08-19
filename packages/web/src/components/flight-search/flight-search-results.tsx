@@ -6,7 +6,9 @@ import { ErrorState } from "@/components/ui/error"
 import { FlightCardSkeleton } from "@/components/ui/loading"
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { Select } from "@/components/ui/select"
-import type { RoundTripBookingStep } from "@/hooks/use-round-trip-booking"
+
+type RoundTripBookingStep = "select_outbound" | "select_return" | "booking"
+
 import { cn } from "@/lib/utils"
 import { FlightCard } from "./flight-card"
 

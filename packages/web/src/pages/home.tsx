@@ -3,15 +3,15 @@ import type {
 	FlightSearchParams,
 	FlightSearchResponse,
 } from "@flight-booking/shared"
-import { DEFAULT_PAGE_SIZE } from "@flight-booking/shared"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FlightSearchForm } from "@/components/flight-search/flight-search-form"
 import { FlightSearchResults } from "@/components/flight-search/flight-search-results"
 import { useAsyncOperation } from "@/hooks/use-api"
-import { useRoundTripBooking } from "@/hooks/use-round-trip-booking"
 import { api } from "@/lib/api"
 import type { FlightSearchFormData } from "@/lib/validations"
+
+const DEFAULT_PAGE_SIZE = 10
 
 export function HomePage() {
 	const navigate = useNavigate()
@@ -19,6 +19,8 @@ export function HomePage() {
 		useState<FlightSearchResponse | null>(null)
 	const [returnSearchResults, setReturnSearchResults] =
 		useState<FlightSearchResponse | null>(null)
+	const [lastSearchParams, setLastSearchParams] =
+		useState<FlightSearchParams | null>(null)
 	const [currentSort, setCurrentSort] = useState<
 		| "price_asc"
 		| "price_desc"
@@ -26,32 +28,31 @@ export function HomePage() {
 		| "departure_desc"
 		| "duration_asc"
 	>("price_asc")
-	const [lastSearchParams, setLastSearchParams] =
-		useState<FlightSearchParams | null>(null)
+
 	const {
 		execute: searchFlights,
 		isLoading,
 		error,
 	} = useAsyncOperation<FlightSearchResponse, FlightSearchParams>()
 
-	const {
-		isRoundTrip,
-		selectedOutboundFlight,
-		selectedReturnFlight,
-		currentStep,
-		setIsRoundTrip,
-		setOutboundFlights,
-		setReturnFlights,
-		selectOutboundFlight,
-		selectReturnFlight,
-		resetBooking,
-	} = useRoundTripBooking()
+	// Simple state management for round-trip bookings
+	const [isRoundTrip, setIsRoundTrip] = useState(false)
+	const [selectedOutboundFlight, setSelectedOutboundFlight] =
+		useState<Flight | null>(null)
+	const [selectedReturnFlight, setSelectedReturnFlight] =
+		useState<Flight | null>(null)
+	const [currentStep, setCurrentStep] = useState<
+		"select_outbound" | "select_return" | "booking"
+	>("select_outbound")
 
 	const handleSearch = async (formData: FlightSearchFormData) => {
 		try {
 			// Update round trip context
 			setIsRoundTrip(formData.isRoundTrip)
-			resetBooking()
+			// Reset booking state
+			setSelectedOutboundFlight(null)
+			setSelectedReturnFlight(null)
+			setCurrentStep("select_outbound")
 
 			// Extract airport codes from city names (e.g., "Tokyo (NRT)" -> "NRT")
 			const sourceCode =
@@ -73,56 +74,48 @@ export function HomePage() {
 			// Store search params for re-sorting
 			setLastSearchParams(outboundParams)
 
-			try {
-				const outboundResults = await searchFlights(
-					api.flights.search,
-					outboundParams,
-				)
-				setSearchResults(outboundResults)
-				setOutboundFlights(outboundResults?.flights || [])
+			const outboundResults = await searchFlights(
+				api.flights.search,
+				outboundParams,
+			)
+			setSearchResults(outboundResults)
 
+			if (formData.isRoundTrip && formData.returnDate) {
 				// If round trip, also search for return flights
-				if (formData.isRoundTrip && formData.returnDate) {
-					const returnParams = {
-						source: destinationCode, // Swap source and destination
-						destination: sourceCode,
-						departure_date: formData.returnDate.toISOString().split("T")[0],
-						page: 1,
-						limit: DEFAULT_PAGE_SIZE,
-						sort_by: currentSort,
-					}
-
-					const returnResults = await searchFlights(
-						api.flights.search,
-						returnParams,
-					)
-					setReturnSearchResults(returnResults)
-					setReturnFlights(returnResults?.flights || [])
-				} else {
-					setReturnSearchResults(null)
-					setReturnFlights([])
+				const returnParams = {
+					source: destinationCode, // Swap source and destination
+					destination: sourceCode,
+					departure_date: formData.returnDate.toISOString().split("T")[0],
+					page: 1,
+					limit: DEFAULT_PAGE_SIZE,
+					sort_by: currentSort,
 				}
-			} catch (apiError) {
-				console.error("Flight search failed:", apiError)
-				// Reset search results on error
-				setSearchResults(null)
-				setOutboundFlights([])
+
+				const returnResults = await searchFlights(
+					api.flights.search,
+					returnParams,
+				)
+				setReturnSearchResults(returnResults)
+			} else {
 				setReturnSearchResults(null)
-				setReturnFlights([])
 			}
 		} catch (error) {
 			console.error("Flight search failed:", error)
+			// Reset search results on error
+			setSearchResults(null)
+			setReturnSearchResults(null)
 		}
 	}
 
 	const handleBookFlight = (flight: Flight) => {
 		if (isRoundTrip) {
 			if (currentStep === "select_outbound") {
-				// Select outbound flight
-				selectOutboundFlight(flight)
+				// Select outbound flight and move to return flight selection
+				setSelectedOutboundFlight(flight)
+				setCurrentStep("select_return")
 			} else if (currentStep === "select_return") {
 				// Select return flight and proceed to booking
-				selectReturnFlight(flight)
+				setSelectedReturnFlight(flight)
 				navigate("/book", {
 					state: {
 						outboundFlight: selectedOutboundFlight,
@@ -144,17 +137,12 @@ export function HomePage() {
 			const newParams = {
 				...lastSearchParams,
 				page,
-				sort_by: currentSort,
 			}
 
-			const outboundResults = await searchFlights(api.flights.search, newParams)
-			setSearchResults(outboundResults)
-			setOutboundFlights(outboundResults?.flights || [])
-
-			// Scroll to top of results
-			window.scrollTo({ top: 0, behavior: "smooth" })
+			const results = await searchFlights(api.flights.search, newParams)
+			setSearchResults(results)
 		} catch (error) {
-			console.error("Failed to change outbound page:", error)
+			console.error("Failed to change page:", error)
 		}
 	}
 
@@ -172,17 +160,10 @@ export function HomePage() {
 				sort_by: currentSort,
 			}
 
-			const returnResults = await searchFlights(
-				api.flights.search,
-				returnParams,
-			)
-			setReturnSearchResults(returnResults)
-			setReturnFlights(returnResults?.flights || [])
-
-			// Scroll to top of results
-			window.scrollTo({ top: 0, behavior: "smooth" })
+			const results = await searchFlights(api.flights.search, returnParams)
+			setReturnSearchResults(results)
 		} catch (error) {
-			console.error("Failed to change return page:", error)
+			console.error("Failed to change page:", error)
 		}
 	}
 
@@ -209,7 +190,6 @@ export function HomePage() {
 
 			const outboundResults = await searchFlights(api.flights.search, newParams)
 			setSearchResults(outboundResults)
-			setOutboundFlights(outboundResults?.flights || [])
 
 			// If round trip, also re-search return flights with new sort
 			if (isRoundTrip && returnSearchResults) {
@@ -228,7 +208,6 @@ export function HomePage() {
 					returnParams,
 				)
 				setReturnSearchResults(returnResults)
-				setReturnFlights(returnResults?.flights || [])
 			}
 		} catch (error) {
 			console.error("Failed to change sort:", error)
