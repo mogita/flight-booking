@@ -201,10 +201,20 @@ export function BookingForm({
 			// Security: Only send necessary booking data to server
 			// Payment details are handled client-side for demo
 			const bookingData = {
-				flight_id: primaryFlight.id, // Server expects snake_case
 				fullname: sanitizeInput(data.fullname),
 				email: sanitizeInput(data.email),
 				phone: data.phone ? sanitizeInput(data.phone) : undefined,
+				trip_type: isRoundTrip ? ("round_trip" as const) : ("one_way" as const),
+				trips: [
+					{
+						flights: [
+							{
+								flight_id: primaryFlight.id,
+								flight_order: 1,
+							},
+						],
+					},
+				],
 			}
 
 			// Simulate payment processing (in real app, use secure payment gateway)
@@ -212,17 +222,34 @@ export function BookingForm({
 
 			// Create booking after successful payment simulation
 			if (isRoundTrip && outboundFlight && returnFlight) {
-				// Create round trip booking
+				// Create round trip booking with new schema
 				const roundTripBookingData = {
-					outbound_flight_id: outboundFlight.id,
-					return_flight_id: returnFlight.id,
-					fullname: data.fullname,
-					email: data.email,
-					phone: data.phone,
+					fullname: sanitizeInput(data.fullname),
+					email: sanitizeInput(data.email),
+					phone: data.phone ? sanitizeInput(data.phone) : undefined,
+					trip_type: "round_trip" as const,
+					trips: [
+						{
+							flights: [
+								{
+									flight_id: outboundFlight.id,
+									flight_order: 1,
+								},
+							],
+						},
+						{
+							flights: [
+								{
+									flight_id: returnFlight.id,
+									flight_order: 2,
+								},
+							],
+						},
+					],
 				}
-				await createBooking(api.bookings.createRoundTrip, roundTripBookingData)
+				await createBooking(api.bookings.create, roundTripBookingData)
 			} else {
-				// Create single booking
+				// Create single booking with new schema
 				await createBooking(api.bookings.create, bookingData)
 			}
 

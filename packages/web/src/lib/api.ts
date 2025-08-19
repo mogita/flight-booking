@@ -2,6 +2,7 @@ import type {
 	ApiResponse,
 	Booking,
 	BookingWithFlight,
+	BookingWithTrips,
 	CreateBookingRequest,
 	CreateRoundTripBookingRequest,
 	Flight,
@@ -215,16 +216,41 @@ export const bookingsApi = {
 		return response.data
 	},
 
+	// Legacy round-trip method - now handled by the main create method
 	createRoundTrip: async (
 		booking: CreateRoundTripBookingRequest,
 	): Promise<RoundTripBooking> => {
-		const response = await apiRequest<ApiResponse<RoundTripBooking>>(
-			"/bookings/round-trip",
-			{
-				method: "POST",
-				body: JSON.stringify(booking),
-			},
-		)
+		// Convert legacy format to new format
+		const newFormatBooking: CreateBookingRequest = {
+			fullname: booking.fullname,
+			email: booking.email,
+			phone: booking.phone,
+			trip_type: "round_trip",
+			trips: [
+				{
+					flights: [
+						{
+							flight_id: booking.outbound_flight_id,
+							flight_order: 1,
+						},
+					],
+				},
+				{
+					flights: [
+						{
+							flight_id: booking.return_flight_id,
+							flight_order: 2,
+						},
+					],
+				},
+			],
+		}
+
+		// Use the main create endpoint
+		const response = await apiRequest<ApiResponse<Booking>>("/bookings", {
+			method: "POST",
+			body: JSON.stringify(newFormatBooking),
+		})
 
 		if (!response?.data) {
 			throw new ApiError(
@@ -233,18 +259,62 @@ export const bookingsApi = {
 			)
 		}
 
-		return response.data
+		// Convert response to legacy format for backward compatibility
+		return {
+			id: response.data.id,
+			outbound_booking_id: response.data.id, // Same booking now
+			return_booking_id: response.data.id, // Same booking now
+			total_price: response.data.total_price,
+			created_at: response.data.created_at,
+			updated_at: response.data.updated_at,
+			deleted_at: response.data.deleted_at,
+		}
 	},
 
 	getAll: async (): Promise<BookingWithFlight[]> => {
-		const response =
-			await apiRequest<ApiResponse<BookingWithFlight[]>>("/bookings")
+		const response = await apiRequest<ApiResponse<BookingWithTrips[]>>("/bookings")
 
 		if (!response?.data) {
 			throw new ApiError("Failed to fetch bookings - no response data", 500)
 		}
 
-		return response.data
+		// Convert new format to legacy format for backward compatibility
+		return response.data.map((booking) => {
+			// For now, just take the first flight from the first trip
+			const firstTrip = booking.trips[0]
+			const firstFlight = firstTrip?.flights[0]
+
+			if (!firstFlight) {
+				throw new ApiError("Booking has no flights", 500)
+			}
+
+			return {
+				id: booking.id,
+				fullname: booking.fullname,
+				email: booking.email,
+				phone: booking.phone,
+				trip_type: booking.trip_type,
+				created_at: booking.created_at,
+				updated_at: booking.updated_at,
+				deleted_at: booking.deleted_at,
+				flight_id: firstFlight.flight_order.toString(), // Use flight order as ID for now
+				booking_type:
+					booking.trip_type === "round_trip" ? "round_trip" : "one_way",
+				round_trip_booking_id:
+					booking.trip_type === "round_trip" ? booking.id : undefined,
+				flight: {
+					airline: firstFlight.airline,
+					flight_number: firstFlight.flight_number,
+					departure_time: firstFlight.departure_time,
+					arrival_time: firstFlight.arrival_time,
+					price: Number(firstFlight.price),
+					source: firstFlight.source_airport,
+					destination: firstFlight.destination_airport,
+					departure_date: firstFlight.departure_date,
+					arrival_date: firstFlight.arrival_date,
+				},
+			}
+		})
 	},
 
 	getById: async (id: string): Promise<BookingWithFlight> => {
