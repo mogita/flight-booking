@@ -271,8 +271,22 @@ export const bookingsApi = {
 		}
 	},
 
+	// New method that returns the full booking structure
+	getAllWithTrips: async (): Promise<BookingWithTrips[]> => {
+		const response =
+			await apiRequest<ApiResponse<BookingWithTrips[]>>("/bookings")
+
+		if (!response?.data) {
+			throw new ApiError("Failed to fetch bookings - no response data", 500)
+		}
+
+		return response.data
+	},
+
+	// Legacy method for backward compatibility
 	getAll: async (): Promise<BookingWithFlight[]> => {
-		const response = await apiRequest<ApiResponse<BookingWithTrips[]>>("/bookings")
+		const response =
+			await apiRequest<ApiResponse<BookingWithTrips[]>>("/bookings")
 
 		if (!response?.data) {
 			throw new ApiError("Failed to fetch bookings - no response data", 500)
