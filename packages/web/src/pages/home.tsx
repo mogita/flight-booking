@@ -142,7 +142,13 @@ export function HomePage() {
 			const results = await searchFlights(api.flights.search, newParams)
 			setSearchResults(results)
 
-			window.scrollTo({ top: 0, behavior: "smooth" })
+			// Scroll to top of outbound flights list
+			const outboundSection = document.querySelector(
+				'[data-testid="outbound-flights"]',
+			)
+			if (outboundSection) {
+				outboundSection.scrollIntoView({ behavior: "smooth", block: "start" })
+			}
 		} catch (error) {
 			console.error("Failed to change page:", error)
 		}
@@ -165,7 +171,13 @@ export function HomePage() {
 			const results = await searchFlights(api.flights.search, returnParams)
 			setReturnSearchResults(results)
 
-			window.scrollTo({ top: 0, behavior: "smooth" })
+			// Scroll to top of return flights list
+			const returnSection = document.querySelector(
+				'[data-testid="return-flights"]',
+			)
+			if (returnSection) {
+				returnSection.scrollIntoView({ behavior: "smooth", block: "start" })
+			}
 		} catch (error) {
 			console.error("Failed to change page:", error)
 		}
@@ -229,7 +241,7 @@ export function HomePage() {
 			{(searchResults || isLoading || error) && (
 				<div className="space-y-8">
 					{/* Outbound Flights */}
-					<div>
+					<div data-testid="outbound-flights">
 						<h2 className="text-2xl font-bold mb-4">
 							{isRoundTrip ? "Outbound Flights" : ""}
 						</h2>
@@ -249,7 +261,7 @@ export function HomePage() {
 
 					{/* Return Flights (Round Trip Only) */}
 					{isRoundTrip && returnSearchResults && (
-						<div>
+						<div data-testid="return-flights">
 							<h2 className="text-2xl font-bold mb-4">Return Flights</h2>
 							<FlightSearchResults
 								results={returnSearchResults}
