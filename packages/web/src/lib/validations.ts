@@ -6,8 +6,7 @@ export const flightSearchSchema = z
 		source: z.string().min(1, "Source city is required"),
 		destination: z.string().min(1, "Destination city is required"),
 		departureDate: z.date({
-			required_error: "Departure date is required",
-			invalid_type_error: "Please select a valid date",
+			message: "Departure date is required",
 		}),
 		returnDate: z.date().optional(),
 		isRoundTrip: z.boolean().default(false),
@@ -78,7 +77,7 @@ export const paymentSchema = z.object({
 		.min(2, "Cardholder name must be at least 2 characters")
 		.max(100, "Cardholder name must be less than 100 characters")
 		.regex(
-			/^[a-zA-Z\s\-'\.]+$/,
+			/^[a-zA-Z\s\-'.]+$/,
 			"Cardholder name can only contain letters, spaces, hyphens, apostrophes, and periods",
 		),
 })

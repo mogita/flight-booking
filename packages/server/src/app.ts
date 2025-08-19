@@ -9,7 +9,7 @@ import { errorHandler, notFoundHandler } from "./middleware/error-handler"
 import apiRoutes from "./routes"
 import { logger } from "./utils/logger"
 
-export function createApp() {
+export function createApp(): express.Application {
 	const app = express()
 
 	// Security middleware
@@ -59,7 +59,7 @@ export function createApp() {
 	}
 
 	// Health check endpoint
-	app.get("/health", (req, res) => {
+	app.get("/health", (_req, res) => {
 		res.json({
 			success: true,
 			message: "Server is healthy",

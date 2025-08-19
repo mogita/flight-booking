@@ -1,6 +1,10 @@
-import type { Flight, FlightSearchResponse } from "@flight-booking/shared"
+import type {
+	Flight,
+	FlightSearchParams,
+	FlightSearchResponse,
+} from "@flight-booking/shared"
 import { DEFAULT_PAGE_SIZE } from "@flight-booking/shared"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FlightSearchForm } from "@/components/flight-search/flight-search-form"
 import { FlightSearchResults } from "@/components/flight-search/flight-search-results"
@@ -15,8 +19,6 @@ export function HomePage() {
 		useState<FlightSearchResponse | null>(null)
 	const [returnSearchResults, setReturnSearchResults] =
 		useState<FlightSearchResponse | null>(null)
-	const [outboundPage, setOutboundPage] = useState(1)
-	const [returnPage, setReturnPage] = useState(1)
 	const [currentSort, setCurrentSort] = useState<
 		| "price_asc"
 		| "price_desc"
@@ -24,12 +26,13 @@ export function HomePage() {
 		| "departure_desc"
 		| "duration_asc"
 	>("price_asc")
-	const [lastSearchParams, setLastSearchParams] = useState<any>(null)
+	const [lastSearchParams, setLastSearchParams] =
+		useState<FlightSearchParams | null>(null)
 	const {
 		execute: searchFlights,
 		isLoading,
 		error,
-	} = useAsyncOperation<FlightSearchResponse, any>()
+	} = useAsyncOperation<FlightSearchResponse, FlightSearchParams>()
 
 	const {
 		isRoundTrip,
@@ -77,7 +80,6 @@ export function HomePage() {
 				)
 				setSearchResults(outboundResults)
 				setOutboundFlights(outboundResults?.flights || [])
-				setOutboundPage(1)
 
 				// If round trip, also search for return flights
 				if (formData.isRoundTrip && formData.returnDate) {
@@ -96,7 +98,6 @@ export function HomePage() {
 					)
 					setReturnSearchResults(returnResults)
 					setReturnFlights(returnResults?.flights || [])
-					setReturnPage(1)
 				} else {
 					setReturnSearchResults(null)
 					setReturnFlights([])
@@ -108,8 +109,6 @@ export function HomePage() {
 				setOutboundFlights([])
 				setReturnSearchResults(null)
 				setReturnFlights([])
-				setOutboundPage(1)
-				setReturnPage(1)
 			}
 		} catch (error) {
 			console.error("Flight search failed:", error)
@@ -142,8 +141,6 @@ export function HomePage() {
 		if (!lastSearchParams) return
 
 		try {
-			setOutboundPage(page)
-
 			const newParams = {
 				...lastSearchParams,
 				page,
@@ -165,8 +162,6 @@ export function HomePage() {
 		if (!lastSearchParams) return
 
 		try {
-			setReturnPage(page)
-
 			const returnParams = {
 				source: lastSearchParams.destination,
 				destination: lastSearchParams.source,
@@ -215,7 +210,6 @@ export function HomePage() {
 			const outboundResults = await searchFlights(api.flights.search, newParams)
 			setSearchResults(outboundResults)
 			setOutboundFlights(outboundResults?.flights || [])
-			setOutboundPage(1)
 
 			// If round trip, also re-search return flights with new sort
 			if (isRoundTrip && returnSearchResults) {

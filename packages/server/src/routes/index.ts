@@ -1,9 +1,9 @@
-import { Router } from "express"
+import { type Router as ExpressRouter, Router } from "express"
 import authRoutes from "./auth"
 import bookingRoutes from "./bookings"
 import flightRoutes from "./flights"
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Mount routes
 router.use("/auth", authRoutes)
@@ -11,7 +11,7 @@ router.use("/flights", flightRoutes)
 router.use("/bookings", bookingRoutes)
 
 // API info endpoint
-router.get("/", (req, res) => {
+router.get("/", (_req, res) => {
 	res.json({
 		success: true,
 		message: "Flight Booking API",

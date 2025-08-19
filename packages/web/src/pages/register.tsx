@@ -111,7 +111,7 @@ export function RegisterPage() {
 			setError(null)
 		}
 
-	const onSubmit = async (data: RegisterFormData) => {
+	const onSubmit = async () => {
 		setIsLoading(true)
 		setError(null)
 
@@ -132,7 +132,7 @@ export function RegisterPage() {
 						"Registration successful! Please log in with your new account.",
 				},
 			})
-		} catch (error) {
+		} catch {
 			setError("Registration failed. Please try again.")
 		} finally {
 			setIsLoading(false)
@@ -275,9 +275,9 @@ export function RegisterPage() {
 										</div>
 
 										<div className="space-y-1">
-											{passwordStrength.checks.map((check, index) => (
+											{passwordStrength.checks.map((check) => (
 												<div
-													key={index}
+													key={check.label}
 													className="flex items-center gap-2 text-xs"
 												>
 													{check.test ? (

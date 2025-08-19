@@ -1,5 +1,5 @@
 import { client, db } from "./connection"
-import { bookings, flights, roundTripBookings } from "./schema"
+import { bookingFlights, bookings, bookingTrips, flights } from "./schema"
 
 // Generate flights for a full year to ensure demo works year-round
 const generateFlightsForYear = () => {
@@ -51,8 +51,11 @@ const generateFlightsForYear = () => {
 						const prefix = flightPrefixes[airlineIndex]
 
 						// Calculate flight duration based on distance (rough estimates)
-						const getFlightDuration = (src, dest) => {
-							const durations = {
+						const getFlightDuration = (
+							src: { name: string },
+							dest: { name: string },
+						): number => {
+							const durations: Record<string, number> = {
 								"Tokyo-Osaka": 90,
 								"Tokyo-Fukuoka": 135,
 								"Tokyo-Sapporo": 105,
@@ -94,8 +97,11 @@ const generateFlightsForYear = () => {
 						) // duration in minutes
 
 						// Calculate base price based on distance and add variation
-						const getBasePrice = (src, dest) => {
-							const prices = {
+						const getBasePrice = (
+							src: { name: string },
+							dest: { name: string },
+						): number => {
+							const prices: Record<string, number> = {
 								"Tokyo-Osaka": 45000,
 								"Tokyo-Fukuoka": 55000,
 								"Tokyo-Sapporo": 42000,
@@ -160,6 +166,67 @@ const generateFlightsForYear = () => {
 // Generate all flights for the year
 const sampleFlights = generateFlightsForYear()
 
+// Create sample bookings with the new schema
+const createSampleBookings = async () => {
+	try {
+		// Get some flights to use for bookings
+		const availableFlights = await db.select().from(flights).limit(20)
+
+		if (availableFlights.length === 0) {
+			console.log("No flights available for creating sample bookings")
+			return
+		}
+
+		// Sample booking 1: One-way trip (single flight)
+		const booking1 = await db
+			.insert(bookings)
+			.values({
+				user_id: 1,
+				fullname: "John Doe",
+				email: "john.doe@example.com",
+				phone: "+81-90-1234-5678",
+				trip_type: "one_way",
+				total_price: availableFlights[0].price,
+			})
+			.returning()
+
+		const trip1 = await db
+			.insert(bookingTrips)
+			.values({
+				user_id: 1,
+				booking_id: booking1[0].id,
+				trip_order: 1,
+				source_airport: availableFlights[0].source,
+				destination_airport: availableFlights[0].destination,
+				departure_time: availableFlights[0].departure_time,
+				arrival_time: availableFlights[0].arrival_time,
+				total_price: availableFlights[0].price,
+			})
+			.returning()
+
+		await db.insert(bookingFlights).values({
+			user_id: 1,
+			booking_id: booking1[0].id,
+			booking_trip_id: trip1[0].id,
+			flight_order: 1,
+			airline: availableFlights[0].airline,
+			flight_number: availableFlights[0].flight_number,
+			departure_time: availableFlights[0].departure_time,
+			arrival_time: availableFlights[0].arrival_time,
+			source_airport: availableFlights[0].source,
+			destination_airport: availableFlights[0].destination,
+			departure_date: availableFlights[0].departure_date,
+			arrival_date: availableFlights[0].arrival_date,
+			price: availableFlights[0].price,
+		})
+
+		console.log("Sample bookings created successfully!")
+	} catch (error) {
+		console.error("Failed to create sample bookings:", error)
+		throw error
+	}
+}
+
 async function seedDatabase() {
 	console.log("Seeding database with comprehensive flight network...")
 
@@ -182,6 +249,10 @@ async function seedDatabase() {
 				`Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(totalFlights / batchSize)} (${batch.length} flights)`,
 			)
 		}
+
+		// Create sample bookings
+		console.log("Creating sample bookings...")
+		await createSampleBookings()
 
 		console.log(
 			`Database seeding completed successfully! Total flights: ${totalFlights}`,

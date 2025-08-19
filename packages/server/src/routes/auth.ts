@@ -13,6 +13,7 @@ const loginSchema = z.object({
 })
 
 const VALID_CREDENTIALS = {
+	id: 1, // Static user ID for demo
 	username: "user",
 	password: "user",
 }
@@ -38,7 +39,10 @@ router.post(
 				data: {
 					token,
 					expires_in: "24h",
-					user: { username },
+					user: {
+						id: VALID_CREDENTIALS.id,
+						username,
+					},
 				},
 			})
 		} catch (error) {

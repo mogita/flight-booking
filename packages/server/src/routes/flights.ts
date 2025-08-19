@@ -1,6 +1,6 @@
 import { DEFAULT_PAGE_SIZE } from "@flight-booking/shared"
 import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm"
-import { Router } from "express"
+import { type Router as ExpressRouter, Router } from "express"
 import { z } from "zod"
 import { db } from "../db/connection"
 import { flights } from "../db/schema"
@@ -8,7 +8,7 @@ import { ApiError } from "../middleware/error-handler"
 import { validateRequest } from "../middleware/validation"
 import { logger } from "../utils/logger"
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Flight search query schema
 const flightSearchSchema = z.object({
@@ -53,12 +53,15 @@ router.get(
 				source,
 				destination,
 				departure_date,
-				return_date,
 				is_round_trip,
 				sort_by,
 				page,
 				limit,
 			} = req.query
+
+			// Type assertions for query parameters
+			const pageNum = page ? Number(page) : 1
+			const limitNum = limit ? Number(limit) : DEFAULT_PAGE_SIZE
 
 			// For round trip searches, we need to find outbound flights only
 			// The return flights will be searched separately by the frontend
@@ -66,26 +69,27 @@ router.get(
 
 			if (source) {
 				conditions.push(
-					sql`LOWER(${flights.source}) LIKE LOWER(${"%" + source + "%"})`,
+					sql`LOWER(${flights.source}) LIKE LOWER(${`%${source}%`})`,
 				)
 			}
 
 			if (destination) {
 				conditions.push(
-					sql`LOWER(${flights.destination}) LIKE LOWER(${"%" + destination + "%"})`,
+					sql`LOWER(${flights.destination}) LIKE LOWER(${`%${destination}%`})`,
 				)
 			}
 
-			if (departure_date) {
+			if (departure_date && typeof departure_date === "string") {
 				const date = new Date(departure_date)
 				const nextDay = new Date(date)
 				nextDay.setDate(date.getDate() + 1)
-				conditions.push(
-					and(
-						gte(flights.departure_date, date),
-						lte(flights.departure_date, nextDay),
-					),
+				const dateCondition = and(
+					gte(flights.departure_date, date),
+					lte(flights.departure_date, nextDay),
 				)
+				if (dateCondition) {
+					conditions.push(dateCondition)
+				}
 			}
 
 			// Always search for one-way flights (is_round_trip: false)
@@ -93,6 +97,7 @@ router.get(
 			conditions.push(eq(flights.is_round_trip, false))
 
 			// Build order by clause based on sort_by option
+			// @ts-ignore - Complex drizzle order clause type
 			let orderClause
 			switch (sort_by) {
 				case "price_asc":
@@ -118,8 +123,8 @@ router.get(
 					orderClause = asc(flights.price) // Default to price ascending
 			}
 
-			// Calculate offset
-			const offset = (page - 1) * limit
+			// Calculate offset using typed variables
+			const offset = (pageNum - 1) * limitNum
 
 			// Get total count
 			const [totalResult] = await db
@@ -135,14 +140,14 @@ router.get(
 				.from(flights)
 				.where(and(...conditions))
 				.orderBy(orderClause)
-				.limit(limit)
+				.limit(limitNum)
 				.offset(offset)
 
-			const totalPages = Math.ceil(total / limit)
+			const totalPages = Math.ceil(total / limitNum)
 
 			logger.info("Flight search performed", {
 				filters: { source, destination, departure_date, is_round_trip },
-				pagination: { page, limit, total, totalPages },
+				pagination: { page: pageNum, limit: limitNum, total, totalPages },
 				resultsCount: flightResults.length,
 			})
 

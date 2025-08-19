@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowLeftRight, Calendar, MapPin, Search } from "lucide-react"
-import React, { useState } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,7 +37,6 @@ export function FlightSearchForm({
 	const [isRoundTrip, setIsRoundTrip] = useState(false)
 
 	const {
-		register,
 		handleSubmit,
 		formState: { errors },
 		setValue,
@@ -63,7 +62,7 @@ export function FlightSearchForm({
 		onSearch(data)
 	}
 
-	const onError = (errors: any) => {
+	const onError = (errors: Record<string, unknown>) => {
 		console.log("❌ Form validation failed:", errors)
 	}
 

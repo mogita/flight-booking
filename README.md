@@ -20,6 +20,14 @@ A full-stack flight booking application with search, sorting, and booking functi
 - **Vitest**: Testing framework - fast and modern alternative to Jest
 - **Express**: Web framework - minimal and flexible for REST APIs
 
+## Flexible Schema Design
+
+- Flexible Trip Types: Supports one-way, round-trip, and other custom forms
+- Multiple Trips per Booking: Can book complex itineraries
+- Data Integrity: Flight details copied, not referenced
+- Scalable: Easy to add new trip types or features
+- Clear Hierarchy: Booking → Trips → Flights
+
 ## Quick Start
 
 ```bash

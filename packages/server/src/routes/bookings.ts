@@ -1,148 +1,248 @@
-import { and, desc, eq, isNull } from "drizzle-orm"
-import { Router } from "express"
+import { desc, eq, isNull } from "drizzle-orm"
+import { type Router as ExpressRouter, Router } from "express"
 import { z } from "zod"
 import { db } from "../db/connection"
-import { bookings, flights, roundTripBookings } from "../db/schema"
+import { bookingFlights, bookings, bookingTrips, flights } from "../db/schema"
 import { authenticateToken } from "../middleware/auth"
 import { ApiError } from "../middleware/error-handler"
 import { validateRequest } from "../middleware/validation"
 import { logger } from "../utils/logger"
 
-const router = Router()
+const router: ExpressRouter = Router()
 
-// Create booking schema
+// Create booking schema with new structure
 const createBookingSchema = z.object({
+	fullname: z
+		.string()
+		.min(2, "Full name must be at least 2 characters")
+		.max(200, "Full name too long"),
+	email: z.string().email("Invalid email address"),
+	phone: z
+		.string()
+		.regex(/^[+]?[0-9\-\s()]+$/, "Invalid phone number format")
+		.optional(),
+	trip_type: z.enum(["one_way", "round_trip", "multi_stop"]),
+	trips: z
+		.array(
+			z.object({
+				flights: z
+					.array(
+						z.object({
+							flight_id: z.string().min(1, "Flight ID is required"),
+							flight_order: z
+								.number()
+								.min(1, "Flight order must be at least 1"),
+						}),
+					)
+					.min(1, "At least one flight is required"),
+			}),
+		)
+		.min(1, "At least one trip is required"),
+})
+
+// Legacy booking schema for backward compatibility
+const createLegacyBookingSchema = z.object({
 	flight_id: z.string().min(1, "Flight ID is required"),
 	fullname: z
 		.string()
 		.min(2, "Full name must be at least 2 characters")
 		.max(200, "Full name too long"),
 	email: z.string().email("Invalid email address"),
-	phone: z.string().optional(),
-})
-
-// Create round trip booking schema
-const createRoundTripBookingSchema = z.object({
-	outbound_flight_id: z.string().min(1, "Outbound flight ID is required"),
-	return_flight_id: z.string().min(1, "Return flight ID is required"),
-	fullname: z
+	phone: z
 		.string()
-		.min(2, "Full name must be at least 2 characters")
-		.max(200, "Full name too long"),
-	email: z.string().email("Invalid email address"),
-	phone: z.string().optional(),
-})
-
-// Update booking schema
-const updateBookingSchema = z.object({
-	fullname: z
-		.string()
-		.min(2, "Full name must be at least 2 characters")
-		.max(200, "Full name too long")
+		.regex(/^[+]?[0-9\-\s()]+$/, "Invalid phone number format")
 		.optional(),
-	email: z.string().email("Invalid email address").optional(),
-	phone: z.string().optional(),
-})
-
-// Booking ID params schema
-const bookingParamsSchema = z.object({
-	id: z.string().min(1, "Booking ID is required"),
+	booking_type: z.enum(["one_way", "round_trip"]).default("one_way"),
 })
 
 // Apply authentication to all booking routes
 router.use(authenticateToken)
 
-// GET /bookings - Get all bookings for authenticated user
-router.get("/", async (req, res, next) => {
+// GET /bookings - Get all bookings with trips and flights
+router.get("/", async (_req, res, next) => {
 	try {
-		const bookingResults = await db
-			.select({
-				id: bookings.id,
-				flight_id: bookings.flight_id,
-				fullname: bookings.fullname,
-				email: bookings.email,
-				phone: bookings.phone,
-				booking_type: bookings.booking_type,
-				round_trip_booking_id: bookings.round_trip_booking_id,
-				created_at: bookings.created_at,
-				updated_at: bookings.updated_at,
-				flight: {
-					airline: flights.airline,
-					flight_number: flights.flight_number,
-					departure_time: flights.departure_time,
-					arrival_time: flights.arrival_time,
-					price: flights.price,
-					source: flights.source,
-					destination: flights.destination,
-					departure_date: flights.departure_date,
-					arrival_date: flights.arrival_date,
-				},
-			})
+		// Get all bookings for user ID 1 (demo user)
+		const userBookings = await db
+			.select()
 			.from(bookings)
-			.leftJoin(flights, eq(bookings.flight_id, flights.id))
-			.where(isNull(bookings.deleted_at))
+			.where(eq(bookings.user_id, 1))
 			.orderBy(desc(bookings.created_at))
 
-		logger.info("Bookings retrieved", {
-			user: req.user?.username,
-			count: bookingResults.length,
+		// Get trips for each booking
+		const bookingsWithTrips = await Promise.all(
+			userBookings.map(async (booking) => {
+				const trips = await db
+					.select()
+					.from(bookingTrips)
+					.where(eq(bookingTrips.booking_id, booking.id))
+					.orderBy(bookingTrips.created_at)
+
+				// Get flights for each trip
+				const tripsWithFlights = await Promise.all(
+					trips.map(async (trip) => {
+						const flights = await db
+							.select()
+							.from(bookingFlights)
+							.where(eq(bookingFlights.booking_trip_id, trip.id))
+							.orderBy(bookingFlights.flight_order)
+
+						return {
+							...trip,
+							flights,
+						}
+					}),
+				)
+
+				return {
+					...booking,
+					trips: tripsWithFlights,
+				}
+			}),
+		)
+
+		logger.info("Retrieved bookings", {
+			count: bookingsWithTrips.length,
+			user_id: 1,
 		})
 
 		res.json({
 			success: true,
-			data: bookingResults,
+			data: bookingsWithTrips,
 		})
 	} catch (error) {
 		next(error)
 	}
 })
 
-// GET /bookings/:id - Get specific booking by ID
-router.get(
-	"/:id",
-	validateRequest({ params: bookingParamsSchema }),
+// POST /bookings - Create new booking with trips and flights
+router.post(
+	"/",
+	validateRequest({ body: createBookingSchema }),
 	async (req, res, next) => {
 		try {
-			const { id } = req.params
+			const { fullname, email, phone, trip_type, trips } = req.body
 
-			const bookingResult = await db
-				.select({
-					id: bookings.id,
-					flight_id: bookings.flight_id,
-					fullname: bookings.fullname,
-					email: bookings.email,
-					phone: bookings.phone,
-					created_at: bookings.created_at,
-					updated_at: bookings.updated_at,
-					flight: {
-						airline: flights.airline,
-						flight_number: flights.flight_number,
-						departure_time: flights.departure_time,
-						arrival_time: flights.arrival_time,
-						price: flights.price,
-						source: flights.source,
-						destination: flights.destination,
-						departure_date: flights.departure_date,
-						arrival_date: flights.arrival_date,
-					},
-				})
-				.from(bookings)
-				.leftJoin(flights, eq(bookings.flight_id, flights.id))
-				.where(and(eq(bookings.id, id), isNull(bookings.deleted_at)))
-				.limit(1)
+			// Calculate total price by fetching flight prices
+			let totalPrice = 0
+			for (const trip of trips) {
+				for (const flightRequest of trip.flights) {
+					const flight = await db
+						.select()
+						.from(flights)
+						.where(eq(flights.id, flightRequest.flight_id))
+						.limit(1)
 
-			if (bookingResult.length === 0) {
-				throw new ApiError("Booking not found", 404)
+					if (flight.length === 0) {
+						throw new ApiError(
+							`Flight ${flightRequest.flight_id} not found`,
+							404,
+						)
+					}
+
+					totalPrice += Number(flight[0].price)
+				}
 			}
 
-			logger.info("Booking retrieved", {
-				bookingId: id,
-				user: req.user?.username,
+			// Create the booking
+			const newBooking = await db
+				.insert(bookings)
+				.values({
+					user_id: 1, // Demo user
+					fullname,
+					email,
+					phone,
+					trip_type,
+					total_price: totalPrice.toString(),
+				})
+				.returning()
+
+			// Create trips and flights
+			const createdTrips = []
+			for (let tripIndex = 0; tripIndex < trips.length; tripIndex++) {
+				const tripRequest = trips[tripIndex]
+				// Calculate trip price
+				let tripPrice = 0
+				const tripFlights = []
+
+				for (const flightRequest of tripRequest.flights) {
+					const flight = await db
+						.select()
+						.from(flights)
+						.where(eq(flights.id, flightRequest.flight_id))
+						.limit(1)
+
+					tripFlights.push(flight[0])
+					tripPrice += Number(flight[0].price)
+				}
+
+				// Determine trip source/destination and times
+				const firstFlight = tripFlights[0]
+				const lastFlight = tripFlights[tripFlights.length - 1]
+
+				// Create the trip
+				const newTrip = await db
+					.insert(bookingTrips)
+					.values({
+						user_id: 1,
+						booking_id: newBooking[0].id,
+						trip_order: tripIndex + 1, // 1-based trip order
+						source_airport: firstFlight.source,
+						destination_airport: lastFlight.destination,
+						departure_time: firstFlight.departure_time,
+						arrival_time: lastFlight.arrival_time,
+						total_price: tripPrice.toString(),
+					})
+					.returning()
+
+				// Create booking flights
+				const createdFlights = []
+				for (let i = 0; i < tripFlights.length; i++) {
+					const flight = tripFlights[i]
+					const flightRequest = tripRequest.flights[i]
+
+					const newBookingFlight = await db
+						.insert(bookingFlights)
+						.values({
+							user_id: 1,
+							booking_id: newBooking[0].id,
+							booking_trip_id: newTrip[0].id,
+							flight_order: flightRequest.flight_order,
+							airline: flight.airline,
+							flight_number: flight.flight_number,
+							departure_time: flight.departure_time,
+							arrival_time: flight.arrival_time,
+							source_airport: flight.source,
+							destination_airport: flight.destination,
+							departure_date: flight.departure_date,
+							arrival_date: flight.arrival_date,
+							price: flight.price,
+						})
+						.returning()
+
+					createdFlights.push(newBookingFlight[0])
+				}
+
+				createdTrips.push({
+					...newTrip[0],
+					flights: createdFlights,
+				})
+			}
+
+			const result = {
+				...newBooking[0],
+				trips: createdTrips,
+			}
+
+			logger.info("Booking created", {
+				booking_id: newBooking[0].id,
+				user_id: 1,
+				total_price: totalPrice,
+				trips_count: trips.length,
 			})
 
-			res.json({
+			res.status(201).json({
 				success: true,
-				data: bookingResult[0],
+				data: result,
 			})
 		} catch (error) {
 			next(error)
@@ -150,260 +250,107 @@ router.get(
 	},
 )
 
-// POST /bookings - Create new booking
+// Legacy endpoint: POST /bookings/legacy - Create booking with old schema
 router.post(
-	"/",
-	validateRequest({ body: createBookingSchema }),
+	"/legacy",
+	validateRequest({ body: createLegacyBookingSchema }),
 	async (req, res, next) => {
 		try {
-			const { flight_id, fullname, email, phone } = req.body
+			const { flight_id, fullname, email, phone, booking_type } = req.body
 
-			// Verify flight exists
+			// Get the flight details
 			const flight = await db
 				.select()
 				.from(flights)
-				.where(and(eq(flights.id, flight_id), isNull(flights.deleted_at)))
+				.where(eq(flights.id, flight_id))
 				.limit(1)
 
 			if (flight.length === 0) {
 				throw new ApiError("Flight not found", 404)
 			}
 
-			// Create booking
-			const [newBooking] = await db
+			const flightData = flight[0]
+
+			// Create the booking
+			const newBooking = await db
 				.insert(bookings)
 				.values({
-					flight_id,
+					user_id: 1, // Demo user
 					fullname,
 					email,
 					phone,
+					trip_type: booking_type === "round_trip" ? "round_trip" : "one_way",
+					total_price: flightData.price,
 				})
 				.returning()
 
-			logger.info("Booking created", {
-				bookingId: newBooking.id,
-				flightId: flight_id,
-				user: req.user?.username,
-				passenger: { fullname, email },
-			})
-
-			res.status(201).json({
-				success: true,
-				data: newBooking,
-				message: "Booking created successfully",
-			})
-		} catch (error) {
-			next(error)
-		}
-	},
-)
-
-// POST /bookings/round-trip - Create round trip booking
-router.post(
-	"/round-trip",
-	validateRequest({ body: createRoundTripBookingSchema }),
-	async (req, res, next) => {
-		try {
-			const { outbound_flight_id, return_flight_id, fullname, email, phone } =
-				req.body
-
-			// Verify both flights exist
-			const outboundFlight = await db
-				.select()
-				.from(flights)
-				.where(
-					and(eq(flights.id, outbound_flight_id), isNull(flights.deleted_at)),
-				)
-				.limit(1)
-
-			const returnFlight = await db
-				.select()
-				.from(flights)
-				.where(
-					and(eq(flights.id, return_flight_id), isNull(flights.deleted_at)),
-				)
-				.limit(1)
-
-			if (outboundFlight.length === 0) {
-				throw new ApiError("Outbound flight not found", 404)
-			}
-
-			if (returnFlight.length === 0) {
-				throw new ApiError("Return flight not found", 404)
-			}
-
-			// Create both bookings in a transaction
-			const result = await db.transaction(async (tx) => {
-				// Create outbound booking
-				const [outboundBooking] = await tx
-					.insert(bookings)
-					.values({
-						flight_id: outbound_flight_id,
-						fullname,
-						email,
-						phone,
-						booking_type: "round_trip",
-					})
-					.returning()
-
-				// Create return booking
-				const [returnBooking] = await tx
-					.insert(bookings)
-					.values({
-						flight_id: return_flight_id,
-						fullname,
-						email,
-						phone,
-						booking_type: "round_trip",
-					})
-					.returning()
-
-				// Calculate total price
-				const totalPrice =
-					Number(outboundFlight[0].price) + Number(returnFlight[0].price)
-
-				// Create round trip booking record
-				const [roundTripBooking] = await tx
-					.insert(roundTripBookings)
-					.values({
-						outbound_booking_id: outboundBooking.id,
-						return_booking_id: returnBooking.id,
-						total_price: totalPrice.toString(),
-					})
-					.returning()
-
-				// Update both bookings with round trip booking ID
-				await tx
-					.update(bookings)
-					.set({ round_trip_booking_id: roundTripBooking.id })
-					.where(eq(bookings.id, outboundBooking.id))
-
-				await tx
-					.update(bookings)
-					.set({ round_trip_booking_id: roundTripBooking.id })
-					.where(eq(bookings.id, returnBooking.id))
-
-				return {
-					roundTripBooking,
-					outboundBooking,
-					returnBooking,
-					totalPrice,
-				}
-			})
-
-			logger.info("Round trip booking created", {
-				roundTripBookingId: result.roundTripBooking.id,
-				outboundBookingId: result.outboundBooking.id,
-				returnBookingId: result.returnBooking.id,
-				outboundFlightId: outbound_flight_id,
-				returnFlightId: return_flight_id,
-				user: req.user?.username,
-				passenger: { fullname, email },
-				totalPrice: result.totalPrice,
-			})
-
-			res.status(201).json({
-				success: true,
-				data: {
-					round_trip_booking: result.roundTripBooking,
-					outbound_booking: result.outboundBooking,
-					return_booking: result.returnBooking,
-					total_price: result.totalPrice,
-				},
-				message: "Round trip booking created successfully",
-			})
-		} catch (error) {
-			next(error)
-		}
-	},
-)
-
-// PUT /bookings/:id - Update booking
-router.put(
-	"/:id",
-	validateRequest({
-		params: bookingParamsSchema,
-		body: updateBookingSchema,
-	}),
-	async (req, res, next) => {
-		try {
-			const { id } = req.params
-			const updateData = req.body
-
-			// Check if booking exists
-			const existingBooking = await db
-				.select()
-				.from(bookings)
-				.where(and(eq(bookings.id, id), isNull(bookings.deleted_at)))
-				.limit(1)
-
-			if (existingBooking.length === 0) {
-				throw new ApiError("Booking not found", 404)
-			}
-
-			// Update booking
-			const [updatedBooking] = await db
-				.update(bookings)
-				.set({
-					...updateData,
-					updated_at: new Date(),
+			// Create the trip
+			const newTrip = await db
+				.insert(bookingTrips)
+				.values({
+					user_id: 1,
+					booking_id: newBooking[0].id,
+					trip_order: 1, // First and only trip for legacy bookings
+					source_airport: flightData.source,
+					destination_airport: flightData.destination,
+					departure_time: flightData.departure_time,
+					arrival_time: flightData.arrival_time,
+					total_price: flightData.price,
 				})
-				.where(eq(bookings.id, id))
 				.returning()
 
-			logger.info("Booking updated", {
-				bookingId: id,
-				user: req.user?.username,
-				updates: updateData,
-			})
-
-			res.json({
-				success: true,
-				data: updatedBooking,
-				message: "Booking updated successfully",
-			})
-		} catch (error) {
-			next(error)
-		}
-	},
-)
-
-// DELETE /bookings/:id - Soft delete booking
-router.delete(
-	"/:id",
-	validateRequest({ params: bookingParamsSchema }),
-	async (req, res, next) => {
-		try {
-			const { id } = req.params
-
-			// Check if booking exists
-			const existingBooking = await db
-				.select()
-				.from(bookings)
-				.where(and(eq(bookings.id, id), isNull(bookings.deleted_at)))
-				.limit(1)
-
-			if (existingBooking.length === 0) {
-				throw new ApiError("Booking not found", 404)
-			}
-
-			// Soft delete booking
+			// Create the booking flight
 			await db
-				.update(bookings)
-				.set({
-					deleted_at: new Date(),
-					updated_at: new Date(),
+				.insert(bookingFlights)
+				.values({
+					user_id: 1,
+					booking_id: newBooking[0].id,
+					booking_trip_id: newTrip[0].id,
+					flight_order: 1,
+					airline: flightData.airline,
+					flight_number: flightData.flight_number,
+					departure_time: flightData.departure_time,
+					arrival_time: flightData.arrival_time,
+					source_airport: flightData.source,
+					destination_airport: flightData.destination,
+					departure_date: flightData.departure_date,
+					arrival_date: flightData.arrival_date,
+					price: flightData.price,
 				})
-				.where(eq(bookings.id, id))
+				.returning()
 
-			logger.info("Booking deleted", {
-				bookingId: id,
-				user: req.user?.username,
+			// Return in legacy format for backward compatibility
+			const legacyResult = {
+				id: newBooking[0].id,
+				flight_id: flight_id,
+				fullname,
+				email,
+				phone,
+				booking_type,
+				created_at: newBooking[0].created_at,
+				updated_at: newBooking[0].updated_at,
+				flight: {
+					airline: flightData.airline,
+					flight_number: flightData.flight_number,
+					departure_time: flightData.departure_time,
+					arrival_time: flightData.arrival_time,
+					price: Number(flightData.price),
+					source: flightData.source,
+					destination: flightData.destination,
+					departure_date: flightData.departure_date,
+					arrival_date: flightData.arrival_date,
+				},
+			}
+
+			logger.info("Legacy booking created", {
+				booking_id: newBooking[0].id,
+				flight_id,
+				booking_type,
 			})
 
-			res.json({
+			res.status(201).json({
 				success: true,
-				message: "Booking deleted successfully",
+				data: legacyResult,
 			})
 		} catch (error) {
 			next(error)
