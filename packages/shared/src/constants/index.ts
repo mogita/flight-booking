@@ -22,7 +22,7 @@ export const SORT_OPTIONS = {
 
 export const PAGINATION = {
 	DEFAULT_PAGE: 1,
-	DEFAULT_LIMIT: 10,
+	DEFAULT_LIMIT: 5,
 	MAX_LIMIT: 100,
 } as const
 
@@ -30,5 +30,5 @@ export const VALIDATION = {
 	MIN_NAME_LENGTH: 2,
 	MAX_NAME_LENGTH: 100,
 	EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-	PHONE_REGEX: /^\+?[\d\s\-\(\)]+$/,
+	PHONE_REGEX: /^\+?[\d\s\-()]+$/,
 } as const

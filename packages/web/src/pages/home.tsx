@@ -3,6 +3,7 @@ import type {
 	FlightSearchParams,
 	FlightSearchResponse,
 } from "@flight-booking/shared"
+import { DEFAULT_PAGE_SIZE } from "@flight-booking/shared"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FlightSearchForm } from "@/components/flight-search/flight-search-form"
@@ -10,8 +11,6 @@ import { FlightSearchResults } from "@/components/flight-search/flight-search-re
 import { useAsyncOperation } from "@/hooks/use-api"
 import { api } from "@/lib/api"
 import type { FlightSearchFormData } from "@/lib/validations"
-
-const DEFAULT_PAGE_SIZE = 10
 
 export function HomePage() {
 	const navigate = useNavigate()
@@ -137,10 +136,13 @@ export function HomePage() {
 			const newParams = {
 				...lastSearchParams,
 				page,
+				sort_by: currentSort,
 			}
 
 			const results = await searchFlights(api.flights.search, newParams)
 			setSearchResults(results)
+
+			window.scrollTo({ top: 0, behavior: "smooth" })
 		} catch (error) {
 			console.error("Failed to change page:", error)
 		}
@@ -162,6 +164,8 @@ export function HomePage() {
 
 			const results = await searchFlights(api.flights.search, returnParams)
 			setReturnSearchResults(results)
+
+			window.scrollTo({ top: 0, behavior: "smooth" })
 		} catch (error) {
 			console.error("Failed to change page:", error)
 		}
