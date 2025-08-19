@@ -1,16 +1,16 @@
 // Booking - financial and user information
 export interface Booking {
-		id: string
-		user_id: number
-		fullname: string
-		email: string
-		phone?: string
-		trip_type: "one_way" | "round_trip" | "multi_stop"
-		total_price: number
-		created_at: string
-		updated_at: string
-		deleted_at?: string
-	}
+	id: string
+	user_id: number
+	fullname: string
+	email: string
+	phone?: string
+	trip_type: "one_way" | "round_trip" | "multi_stop"
+	total_price: number
+	created_at: string
+	updated_at: string
+	deleted_at?: string
+}
 
 // Booking Trip - journey segment within a booking
 export interface BookingTrip {
@@ -74,46 +74,4 @@ export interface BookingWithTrips extends Booking {
 
 export interface BookingTripWithFlights extends BookingTrip {
 	flights: BookingFlight[]
-}
-
-// Legacy types for backward compatibility (can be removed later)
-export interface RoundTripBooking {
-	id: string
-	outbound_booking_id: string
-	return_booking_id: string
-	total_price: number
-	created_at: string
-	updated_at: string
-	deleted_at?: string
-}
-
-export interface CreateRoundTripBookingRequest {
-	outbound_flight_id: string
-	return_flight_id: string
-	fullname: string
-	email: string
-	phone?: string
-}
-
-export interface BookingWithFlight
-	extends Omit<Booking, "user_id" | "total_price"> {
-	flight_id: string
-	booking_type: "one_way" | "round_trip"
-	round_trip_booking_id?: string
-	flight: {
-		airline: string
-		flight_number: string
-		departure_time: string
-		arrival_time: string
-		price: number
-		source: string
-		destination: string
-		departure_date: string
-		arrival_date: string
-	}
-}
-
-export interface RoundTripBookingWithFlights extends RoundTripBooking {
-	outbound_booking: BookingWithFlight
-	return_booking: BookingWithFlight
 }

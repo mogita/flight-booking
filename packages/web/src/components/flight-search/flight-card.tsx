@@ -3,7 +3,9 @@ import { format } from "date-fns"
 import { ArrowRight, Check, Clock, Plane, Star, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import type { RoundTripBookingStep } from "@/hooks/use-round-trip-booking"
+
+type RoundTripBookingStep = "select_outbound" | "select_return" | "booking"
+
 import { cn } from "@/lib/utils"
 
 interface FlightCardProps {

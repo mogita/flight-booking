@@ -1,4 +1,4 @@
-import { desc, eq, isNull } from "drizzle-orm"
+import { desc, eq } from "drizzle-orm"
 import { type Router as ExpressRouter, Router } from "express"
 import { z } from "zod"
 import { db } from "../db/connection"
@@ -19,6 +19,15 @@ const createBookingSchema = z.object({
 	email: z.string().email("Invalid email address"),
 	phone: z
 		.string()
+		// Valid examples:
+		//     "+1 212-555-0123"
+		//     "212 555 0123"
+		//     "(212) 555-0123"
+		//     "123456"
+		// Invalid examples:
+		//     "" (empty string) — fails because [ ... ]+ requires at least one character.
+		//     "++123" — only one leading plus is allowed and only at the start.
+		//     "123x456" — “x” isn’t permitted by the character class.
 		.regex(/^[+]?[0-9\-\s()]+$/, "Invalid phone number format")
 		.optional(),
 	trip_type: z.enum(["one_way", "round_trip", "multi_stop"]),
@@ -38,21 +47,6 @@ const createBookingSchema = z.object({
 			}),
 		)
 		.min(1, "At least one trip is required"),
-})
-
-// Legacy booking schema for backward compatibility
-const createLegacyBookingSchema = z.object({
-	flight_id: z.string().min(1, "Flight ID is required"),
-	fullname: z
-		.string()
-		.min(2, "Full name must be at least 2 characters")
-		.max(200, "Full name too long"),
-	email: z.string().email("Invalid email address"),
-	phone: z
-		.string()
-		.regex(/^[+]?[0-9\-\s()]+$/, "Invalid phone number format")
-		.optional(),
-	booking_type: z.enum(["one_way", "round_trip"]).default("one_way"),
 })
 
 // Apply authentication to all booking routes
@@ -243,114 +237,6 @@ router.post(
 			res.status(201).json({
 				success: true,
 				data: result,
-			})
-		} catch (error) {
-			next(error)
-		}
-	},
-)
-
-// Legacy endpoint: POST /bookings/legacy - Create booking with old schema
-router.post(
-	"/legacy",
-	validateRequest({ body: createLegacyBookingSchema }),
-	async (req, res, next) => {
-		try {
-			const { flight_id, fullname, email, phone, booking_type } = req.body
-
-			// Get the flight details
-			const flight = await db
-				.select()
-				.from(flights)
-				.where(eq(flights.id, flight_id))
-				.limit(1)
-
-			if (flight.length === 0) {
-				throw new ApiError("Flight not found", 404)
-			}
-
-			const flightData = flight[0]
-
-			// Create the booking
-			const newBooking = await db
-				.insert(bookings)
-				.values({
-					user_id: 1, // Demo user
-					fullname,
-					email,
-					phone,
-					trip_type: booking_type === "round_trip" ? "round_trip" : "one_way",
-					total_price: flightData.price,
-				})
-				.returning()
-
-			// Create the trip
-			const newTrip = await db
-				.insert(bookingTrips)
-				.values({
-					user_id: 1,
-					booking_id: newBooking[0].id,
-					trip_order: 1, // First and only trip for legacy bookings
-					source_airport: flightData.source,
-					destination_airport: flightData.destination,
-					departure_time: flightData.departure_time,
-					arrival_time: flightData.arrival_time,
-					total_price: flightData.price,
-				})
-				.returning()
-
-			// Create the booking flight
-			await db
-				.insert(bookingFlights)
-				.values({
-					user_id: 1,
-					booking_id: newBooking[0].id,
-					booking_trip_id: newTrip[0].id,
-					flight_order: 1,
-					airline: flightData.airline,
-					flight_number: flightData.flight_number,
-					departure_time: flightData.departure_time,
-					arrival_time: flightData.arrival_time,
-					source_airport: flightData.source,
-					destination_airport: flightData.destination,
-					departure_date: flightData.departure_date,
-					arrival_date: flightData.arrival_date,
-					price: flightData.price,
-				})
-				.returning()
-
-			// Return in legacy format for backward compatibility
-			const legacyResult = {
-				id: newBooking[0].id,
-				flight_id: flight_id,
-				fullname,
-				email,
-				phone,
-				booking_type,
-				created_at: newBooking[0].created_at,
-				updated_at: newBooking[0].updated_at,
-				flight: {
-					airline: flightData.airline,
-					flight_number: flightData.flight_number,
-					departure_time: flightData.departure_time,
-					arrival_time: flightData.arrival_time,
-					price: Number(flightData.price),
-					source: flightData.source,
-					destination: flightData.destination,
-					departure_date: flightData.departure_date,
-					arrival_date: flightData.arrival_date,
-				},
-			}
-
-			logger.info("Legacy booking created", {
-				booking_id: newBooking[0].id,
-				flight_id,
-				booking_type,
-			})
-
-			res.status(201).json({
-				success: true,
-				data: legacyResult,
 			})
 		} catch (error) {
 			next(error)
